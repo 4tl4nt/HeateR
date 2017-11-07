@@ -18,9 +18,11 @@
 #define LIST_MAX_WIRE 31  // Максимально количество интерфейсов в списке ListOneWire_c
 #define RESOLUTION_SENSORS 10// Разрядность сенсоров
 #define DUBUGING_MODE // Закоментировать чтобы отключить вывод отладочной информации в терминал
-#define VERSION_HEATER 21 // Версия прошивки влияет на сохраненные настройки
+#define VERSION_HEATER 23 // Версия прошивки влияет на сохраненные настройки
 #define RESET_PIN 8 // пин который выведен на контакт ресет
 #define TIMEOUT_GETTEMP 5000 // количество мелискунд для повторного запроса температуры
+#define MINIMAL_TEMPERATURE 14.00
+#define MAXIMAL_TEMPERATURE 30.00
 
 #define GETTIME() millis()
 
@@ -98,10 +100,22 @@ public:
  * OneWire интерфейсе)
  */
 class Room_c: public Sensor_c, public Rele_c{
+	double MinTemp;
+	double MaxTemp;
+	bool EnableControlTemp;
 public:
-	int RoomNumber;
 	Room_c(int room, int relePin, int wireInt, uint8_t* wireAdd);
+	void Update();
+	void SetControlTemp(bool state){EnableControlTemp=state;};
+	void SetControlTemp(double min, double max);
+	void SetControlTemp(double temp);
+	bool GetControlTemp(){return EnableControlTemp;};
+	double GetMaxTemp(){return MaxTemp;};
+	double GetMinTemp(){return MinTemp;};
+	int RoomNumber;
+	friend void UpdateNextOne();
 };
+void UpdataNextOne();
 /*
  * Односвязный список. Используеться для хранения списка  указателей на интерфесы OneWire и DallasTemperature
  * Не хранит адрес датчика

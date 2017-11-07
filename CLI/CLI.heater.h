@@ -39,5 +39,6 @@ public:
 	char WaitForAnyKey();
 	void RemoveRoomFromCLI();
 	void ControlRoomCLI();
+	void ClimateControl(Room_c *p);
 };
 #endif

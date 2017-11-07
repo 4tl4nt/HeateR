@@ -10,21 +10,26 @@
 menu_c mainMenu[NUMBER_ITEM_MAIN+1];
 const char *MainItems[NUMBER_ITEM_MAIN+1]=
 {
-	"\f\n\t\tHeateR v 2.1",
+	"\f\n\t\tHeateR v 2.3",
 	"Управление аудиториями",
-	"Показать температуру в адиториях",
+	"Показать температуру в аудиториях",
 	"Показать включенные обогреватели",
 	"Сохранить в постоянную память",
 	"Сброс настроек",
 	"Перезагрузить",
 	"Выход из меню"
 };
-#define NUMBER_ITEM_MENU_001 4
+#define NUMBER_ITEM_MENU_001 9
 menu_c Menu_1[NUMBER_ITEM_MENU_001+1];
 const char *Menu_1Items[NUMBER_ITEM_MENU_001+1]=
 {
 	"Выберите действие:",
-	"Выбрать аудиторию",
+	"Управлять одной аудиторией",
+	"ВКЛ КК в аудитории",
+	"ВКЛ КК во всех аудиториях",
+	"ВЫКЛ КК в аудитории",
+	"ВЫКЛ КК во всех аудиториях",
+	"ВЫКЛ все обогреватели",
 	"Добавить аудиторию",
 	"Удалить Аудиторию",
 	"Выход в главное меню"
@@ -114,6 +119,8 @@ void ObjCLI::MainMenu (){
 		break;
 		case 4://"Сохранить в постоянную память",
 			SaveListToEEPROM();
+			printCLI("Сохраненно\n");
+			WaitForAnyKey();
 		break;
 		case 5://"Сброс настрек",
 			printCLI("Вы точно хотите сбросить настройки?\n9. Да\n1. Нет\n");
@@ -124,6 +131,7 @@ void ObjCLI::MainMenu (){
 			if (readNumCLI()==9) HeaterReBoot(ResetMode);
 		break;
 		case 7:
+			while(CliStream->read()!=(-1));
 			return;//"Выход из меню"
 		break;
 		default:
@@ -135,6 +143,8 @@ void ObjCLI::MainMenu (){
 //void getAllRoom(ptrFunc stream);
 void ObjCLI::Menu_1_f (){
 	int tmp;
+	ListRoom_c* list_p;
+	Room_c* room_p;
 	while (1)
 	{
 		printCLI("\f\n\t\tCписок аудиторий:\n");
@@ -146,15 +156,56 @@ void ObjCLI::Menu_1_f (){
 			ControlRoomCLI();
 		break;
 		case 2:
-			addNewRoom(NewRoom());
+			printCLI("Укажите Аудиторию: ");
+			tmp = readDoubleCLI();
+			room_p = getRoom(tmp);
+			if (room_p==NULL) {
+				printCLI("Не корректно...\n");
+				WaitForAnyKey();
+			}
+			else room_p->SetControlTemp(true);
 		break;
 		case 3:
-			RemoveRoomFromCLI();
+			list_p = &ListRoom_c::FirstRoom;
+			while (list_p->room_p!=NULL){
+				list_p->room_p->SetControlTemp(true);
+				list_p = list_p->next_p;
+			}
 		break;
 		case 4:
+			printCLI("Укажите Аудиторию: ");
+			tmp = readDoubleCLI();
+			room_p = getRoom(tmp);
+			if (room_p==NULL) {
+				printCLI("Не корректно...");
+				WaitForAnyKey();
+			}
+			else room_p->SetControlTemp(false);
+		break;
+		case 5:
+			list_p = &ListRoom_c::FirstRoom;
+			while (list_p->room_p!=NULL){
+				list_p->room_p->SetControlTemp(false);
+				list_p = list_p->next_p;
+			}
+		break;
+		case 6:
+			list_p = &ListRoom_c::FirstRoom;
+			while (list_p->room_p!=NULL){
+				list_p->room_p->ResetRele();
+				list_p = list_p->next_p;
+			}
+		break;
+		case 7:
+			addNewRoom(NewRoom());
+		break;
+		case 8:
+			RemoveRoomFromCLI();
+		break;
+		case 9:
 			return;
 		default:
-			printCLI("Используейте цифры 1-6\n");
+			printCLI("Используейте цифры 1-9\n");
 			break;
 		}
 	}
@@ -173,21 +224,20 @@ Room_c* ObjCLI::NewRoom(){
 	printCLI("Номер группы портов датчика: ");
 	w = readDoubleCLI();
 	ListOneWire_p = GetOneWire(w);
+	while(CliStream->read()!=(-1));
 	while (n==99) 
 	{
+		
 		while (!c){
 			c = printAllSensors(ListOneWire_p->DallasTemperature_p);
-			if (CliStream->available()) {
-				return NULL;
-				while(CliStream->read()!=(-1));
-			}
+			if (CliStream->available()) return NULL;
 			if (!c) printCLI("Поиск...");
 			delay(10);
 		}
 		printCLI("Выберите:\n(0...98)датчик\n(99)искать заново\n(100)выход\nСделайте свой выбор: ");
 		n = readDoubleCLI();
 		if (n==100) return NULL;
-		if (n >= c) {
+		if (n > c-1) {
 			n=99;
 			c=0;
 			continue;
@@ -238,11 +288,13 @@ int ObjCLI::printAllSensors(DallasTemperature* DallasTemperature_p)
 int ObjCLI::readNumCLI ()
 {
 	while(CliStream->read()!=(-1));
+	delay(1);
 	char tmp=0;
-	while (CliStream->available() == 0);
+	while (CliStream->available() == 0)UpdataNextOne();
 	CliStream->readBytes(&tmp, 1);
 	printCLI(tmp);
     printCLI("\n");
+	while(CliStream->read()!=(-1));
 	if((tmp<0x30)&&(tmp>0x39)) return -1;
     return tmp-0x30;
 }
@@ -252,7 +304,7 @@ double ObjCLI::readDoubleCLI()
 	char tmp=0;
 	int i=0;
 	while (tmp != 0x0D&&tmp != 0x0A){
-		while (CliStream->available() == 0);
+		while (CliStream->available() == 0)UpdataNextOne();;
 		CliStream->readBytes(&tmp, 1);
 		Buffer[i++]=tmp;
 		printCLI(tmp);
@@ -260,6 +312,7 @@ double ObjCLI::readDoubleCLI()
 	if (i==1) return 0;
     Buffer[i]='\0';
     printCLI("\n");
+	while(CliStream->read()!=(-1));
     return strtod(Buffer, NULL);
 }
 
@@ -274,19 +327,25 @@ void ObjCLI::printAllRoom()
 }
 void ObjCLI::printRoom(Room_c* tmp_p)
 {
-	printCLI("Комната №");
+	printCLI("№");
 	printCLI(tmp_p->RoomNumber);
-	printCLI(",\t текущая тепература ");
+	if (tmp_p->RoomNumber>9) printCLI(", C:");
+	else printCLI(",  C:");
 	printCLI(tmp_p->GetTemperature());
-	printCLI(",\t обогреватель ");
-	if(tmp_p->GetStateRele()) printCLI("ВКЛ");
+	printCLI(", Heater:");
+	if(tmp_p->GetStateRele()) printCLI(" ВКЛ");
 	else printCLI("ВЫКЛ");
-	printCLI(".\n");
+	printCLI(", ");
+	printCLI(tmp_p->GetMinTemp());
+	if (tmp_p->GetControlTemp()) printCLI("<<AUTO>>");
+	else printCLI("<<    >>");
+	printCLI(tmp_p->GetMaxTemp());
+	printCLI("\n");
 }
 
 char ObjCLI::WaitForAnyKey(){
 	printCLI("Нажмите любую клавишу...\n");
-	while (CliStream->available() == 0);
+	while (CliStream->available() == 0)UpdataNextOne();;
 		Buffer[0] = CliStream->read();
 	return Buffer[0];
 }
@@ -299,7 +358,7 @@ void ObjCLI::RemoveRoomFromCLI(){
 		printCLI("Ведите номер аудитории(99. выход):");
 		tmp_room = readDoubleCLI();
 		if (tmp_room==99)return;
-		if (getRoom((int)tmp_room)==NULL){
+		if (getRoom(tmp_room)==NULL){
 			printCLI("Аудитории не существует.\n");
 			WaitForAnyKey();
 			continue;
@@ -326,7 +385,7 @@ void ObjCLI::ControlRoomCLI()
 	{
 		printCLI("\f");
 		printRoom(p);
-		printCLI("ВКЛ/ВЫКЛ обогреватель\n0-ВЫКЛ\n1-ВКЛ\n2. Обновить\n3. Калибровать датчик\n4. Cброс калибровки датчика\n5. Выход из управления:\n");
+		printCLI("\ВКЛ/ВЫКЛ обогреватель\n0-ВЫКЛ\n1-ВКЛ\n2. Обновить\n3. Калибровать датчик\n4. Cброс калибровки датчика\n5. Настроить КК\n6. Выключить КК\n7. Удалить аудиторию\n9. Выход из управления\n");
 		printCLI("Сделайте свой выбор: ");
 		switch(readNumCLI()){
 			case 0: p->ResetRele();
@@ -339,11 +398,35 @@ void ObjCLI::ControlRoomCLI()
 		break;
 			case 4: 
 			p->ResetCalibration();
+			printCLI("Выполнен сброс калибровки\n");
+			WaitForAnyKey();
 		break;
-			case 5: return;
+			case 5: 
+			ClimateControl(p);
+		break;
+			case 6: 
+			p->SetControlTemp(false);
+			printCLI("КК отключен\n");
+			WaitForAnyKey();
+		break;
+			case 7: 
+			DeleteRoom(p->RoomNumber);
+			return;
+		break;
+			case 9: return;
 		break;
 			default: 
 		break;
 		}
 	}
+}
+void ObjCLI::ClimateControl(Room_c *p){
+	printCLI("Укажите температуру: ");
+	double temp = readDoubleCLI();
+	if (temp < MINIMAL_TEMPERATURE || temp > MAXIMAL_TEMPERATURE){
+		printCLI("Указана некорректно!\n");
+		WaitForAnyKey();
+		return;
+	}
+	p->SetControlTemp(temp);
 }
