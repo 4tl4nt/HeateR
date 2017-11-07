@@ -106,12 +106,14 @@ class Room_c: public Sensor_c, public Rele_c{
 public:
 	Room_c(int room, int relePin, int wireInt, uint8_t* wireAdd);
 	void Update();
-	void SetControlTemp(bool state){EnableControlTemp=state;};
+	void SetControlTemp(bool state){EnableControlTemp=state;if (!state) { ResetRele(); TimeOutCT = 0;}};
 	void SetControlTemp(double min, double max);
 	void SetControlTemp(double temp);
 	bool GetControlTemp(){return EnableControlTemp;};
 	double GetMaxTemp(){return MaxTemp;};
 	double GetMinTemp(){return MinTemp;};
+	void SetTimeOutCT(unsigned long i);
+	unsigned long TimeOutCT;
 	int RoomNumber;
 	friend void UpdateNextOne();
 };

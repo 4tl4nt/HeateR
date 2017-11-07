@@ -4,8 +4,7 @@
 #include <EthernetClient.h>
 #include <EthernetServer.h>
 #include <EthernetUdp.h>
-#include <HeateR.h>;
-#include <TimerOne.h>
+#include <HeateR.h>
 
 byte m_mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEF };
 byte m_ip[] = {10,4,11,250};
@@ -18,54 +17,40 @@ unsigned int portCLI = 12346;
 EthernetServer serverCLIoverTCP(portCLI);
 EthernetServer serverAPI(portAPI);
 EthernetClient clientAPI, clientCLI;
+ObjCLI *SerialCLI = NULL;
+#define SIZE_LOOP_BUF 30
+char buff[SIZE_LOOP_BUF];
+
 void InitEthernet(){
   Ethernet.begin(m_mac, m_ip, m_dns, m_gateway, m_mask);
   serverCLIoverTCP.begin();
   serverAPI.begin();
-  
-  //Timer1.initialize(1500000);
-  //Timer1.attachInterrupt(TimerFunc); 
 }
-ObjCLI *SerialCLI = NULL;;
 
-void TimerFunc(void){
-  UpdataNextOne();
-}
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(115200);
-  while (!Serial);             // Leonardo: wait for serial monitor
+  while (!Serial);
   Serial.println("Inited serial.");
   InitRelayModule();
   InitHeateR();
   InitEthernet();
   Serial.println("MainController has started.");
-  /*while(client.read()!=(-1));
-  for(int i=0;i<1000;i++){
-    if (Serial.available()){
-      SerialCLI= new ObjCLI(&Serial);
-      SerialCLI->InitMenu();
-      SerialCLI->MainMenu();
-    }
-    delay(1);
-  }*/
-  
   Serial.println("listen...");
+  
 }
-char buff[30];
+
 void loop() {
   delay(10);
-  
   UpdataNextOne();
   clientAPI = serverAPI.available();
   clientCLI = serverCLIoverTCP.available();
-  int num_room, state;
+  unsigned int num_room, state;
   Room_c* room_p;
   
   if (clientAPI) 
   {
     Serial.println("connectAPI");
-    for(int i=0;i<9;i++)
+    for(int i=0;i<SIZE_LOOP_BUF;i++)
     {
       Serial.print("read ");
       buff[i]=clientAPI.read();
@@ -81,8 +66,12 @@ void loop() {
       room_p = getRoom(num_room);
       if (room_p != NULL) {
         clientAPI.print("OK;");
-        if (state==1) room_p->SetRele();
-        else if (state==0) room_p->ResetRele();
+        if (state==0) room_p->SetControlTemp(false);
+        else if (state==1) {
+          buff[14]='\0';
+          state = atoi(&buff[9]);
+          room_p->SetTimeOutCT(state);
+        }
       }
       else clientAPI.print("ERROR;");
     }
@@ -98,7 +87,7 @@ void loop() {
         }
         else if (state==2){
         clientAPI.print("OK,");
-        clientAPI.print(room_p->CurrentState);
+        clientAPI.print(room_p->GetControlTemp());
         clientAPI.print(";");
         }
         else clientAPI.print("ERROR;");
@@ -106,7 +95,6 @@ void loop() {
       else clientAPI.print("ERROR;");
     }
     while(clientAPI.read()!=(-1));
-    //clientAPI.print("\n");
   Serial.println("listen...");
   }
   if (clientCLI)

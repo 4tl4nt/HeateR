@@ -99,8 +99,16 @@ float Sensor_c::GetTemperature()
 			if (CountBadTemperature==MaxBadTemperature) return -127;
 			else CountBadTemperature++;
 			DEBUG("Плохой замер температуры в группе портов №");
-			DEBUG(OneWireInterfacePin-21);
+			DEBUG(OneWireInterfacePin);
+			DEBUG("\nДатчик №");
+			#ifdef DEBUG
+			for (int i=0;i<8;i++){
+				DEBUG(OneWireAddresse[i],HEX);
+				if (i<7)DEBUG(':');
+			}
+			#endif
 			DEBUG("\n");
+			
 		}
 		delay(1);
 	}while(CurrentTemperature == -127);
@@ -160,6 +168,7 @@ Room_c::Room_c(int room, int relePin, int wireInt, uint8_t* wireAdd)
 	RoomNumber=room;
 	MaxTemp = MINIMAL_TEMPERATURE+1;
 	MinTemp = MINIMAL_TEMPERATURE;
+	TimeOutCT = 0;
 	EnableControlTemp=false;
 	DEBUG("Created new room. Number of room is ");
 	DEBUG(RoomNumber);
@@ -170,6 +179,21 @@ Room_c::Room_c(int room, int relePin, int wireInt, uint8_t* wireAdd)
  */
 void Room_c::Update(){
 	double temp = GetTemperature(); 
+	if (TimeOutCT>0){
+		unsigned long CurrentTime = millis();
+		DEBUG("Room:");
+		DEBUG(RoomNumber);
+		DEBUG(" |\tTimeOut:");
+		DEBUG(TimeOutCT);
+		DEBUG(" |\tCurrentTime:");
+		DEBUG(CurrentTime);
+		DEBUG("\n");
+		if (TimeOutCT < CurrentTime){
+			if((CurrentTime-TimeOutCT) < 0xFFFF){
+				SetControlTemp(false);
+			}
+		}
+	}
 	if (temp<(-27)) return;
 	if (EnableControlTemp){
 		if (temp<=MinTemp && !GetStateRele()) {
@@ -199,6 +223,31 @@ void Room_c::Update(){
 			DEBUG("\n");
 		}
 	}
+}
+/*
+ *
+ */
+void Room_c::SetTimeOutCT(unsigned long i){
+	DEBUG("SetTimeOutCT\n");
+	DEBUG("i = ");
+	DEBUG(i);
+	DEBUG("\n");
+	if (i==0){
+		SetControlTemp(false);
+		return;
+		DEBUG("return\n");
+	}
+	unsigned long CurrentTime = millis();
+	if ((0xFFFFFFFF-CurrentTime)<i){
+		TimeOutCT = i-(0xFFFFFFFF-CurrentTime);
+		DEBUG("if\n");
+	}
+	else {
+		TimeOutCT = CurrentTime + i*1000;
+		DEBUG(TimeOutCT);
+		DEBUG(" - else\n");
+	}
+	SetControlTemp(true);
 }
 /*
  *
