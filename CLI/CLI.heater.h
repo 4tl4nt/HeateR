@@ -41,4 +41,5 @@ public:
 	void ControlRoomCLI();
 	void ClimateControl(Room_c *p);
 };
+void UpDate ();
 #endif

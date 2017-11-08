@@ -290,7 +290,7 @@ int ObjCLI::readNumCLI ()
 	while(CliStream->read()!=(-1));
 	delay(1);
 	char tmp=0;
-	while (CliStream->available() == 0)UpdataNextOne();
+	while (CliStream->available() == 0)UpDate();
 	CliStream->readBytes(&tmp, 1);
 	printCLI(tmp);
     printCLI("\n");
@@ -304,7 +304,7 @@ double ObjCLI::readDoubleCLI()
 	char tmp=0;
 	int i=0;
 	while (tmp != 0x0D&&tmp != 0x0A){
-		while (CliStream->available() == 0)UpdataNextOne();;
+		while (CliStream->available() == 0)UpDate();;
 		CliStream->readBytes(&tmp, 1);
 		Buffer[i++]=tmp;
 		printCLI(tmp);
@@ -345,7 +345,7 @@ void ObjCLI::printRoom(Room_c* tmp_p)
 
 char ObjCLI::WaitForAnyKey(){
 	printCLI("Нажмите любую клавишу...\n");
-	while (CliStream->available() == 0)UpdataNextOne();;
+	while (CliStream->available() == 0)UpDate();;
 		Buffer[0] = CliStream->read();
 	return Buffer[0];
 }
