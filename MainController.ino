@@ -27,6 +27,10 @@ void InitEthernet(){
   serverAPI.begin();
 }
 
+void UpDate (){
+  
+}
+
 void setup() {
   Serial.begin(115200);
   while (!Serial);
