@@ -12,9 +12,6 @@ void UpDate (){
   UpdataNextOne();
   clientAPI = serverAPI.available();
   CommAPI(clientAPI);
-  #if USE_NTP
-  
-  #endif
 }
 
 void setup() {
@@ -25,10 +22,11 @@ void setup() {
   InitHeateR();
   InitEthernet();
   Serial.println("MainController has started.");
- /* delay(10000);
+#if USE_NTP
   Serial.println("Start ntp request...");
   ntp->getTime();
-  Serial.println("End ntp request."); */
+  Serial.println("End ntp request."); 
+#endif
   Serial.println("listen...");
 }
 

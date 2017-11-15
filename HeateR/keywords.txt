@@ -1,0 +1,11 @@
+InitRelayModule	KEYWORD2
+class Sensor_c	KEYWORD1
+GetTemperature	KEYWORD2
+SetCalibration	KEYWORD2
+class Rele_c	KEYWORD1
+SetRele	KEYWORD2
+ResetRele	KEYWORD2
+GetStateRele	KEYWORD2
+class Room_C	KEYWORD1
+class ListOneWire_c	KEYWORD1
+GetOneWire	KEYWORD2
