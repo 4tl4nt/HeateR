@@ -7,29 +7,14 @@
 #include <HeateR.h>
 #include <Communications.h>
 
-byte m_mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEF };
-byte m_ip[] = {10,4,11,250};
-byte m_mask[] = {255,255,255,0};
-byte m_gateway[] = {10,4,11,254};
-byte m_dns[] = {8,8,8,8};
-unsigned int portAPI = 12345;
-unsigned int portCLI = 12346;
-
-EthernetServer serverCLIoverTCP(portCLI);
-EthernetServer serverAPI(portAPI);
-EthernetClient clientAPI, clientCLI;
 ObjCLI *SerialCLI = NULL;
-
-void InitEthernet(){
-  Ethernet.begin(m_mac, m_ip, m_dns, m_gateway, m_mask);
-  serverCLIoverTCP.begin();
-  serverAPI.begin();
-}
-
 void UpDate (){
   UpdataNextOne();
   clientAPI = serverAPI.available();
   CommAPI(clientAPI);
+  #if USE_NTP
+  
+  #endif
 }
 
 void setup() {
@@ -40,8 +25,11 @@ void setup() {
   InitHeateR();
   InitEthernet();
   Serial.println("MainController has started.");
+ /* delay(10000);
+  Serial.println("Start ntp request...");
+  ntp->getTime();
+  Serial.println("End ntp request."); */
   Serial.println("listen...");
-  
 }
 
 void loop() {
