@@ -96,18 +96,19 @@ float Sensor_c::GetTemperature()
 		CurrentTemperature = DallasTemperature_p->getTempC(OneWireAddresse);
 		if (CurrentTemperature == -127)
 		{
-			if (CountBadTemperature==MaxBadTemperature) return -127;
-			else CountBadTemperature++;
-			DEBUG("Плохой замер температуры в группе портов №");
-			DEBUG(OneWireInterfacePin);
-			DEBUG("\nДатчик №");
-			#ifdef DEBUG
-			for (int i=0;i<8;i++){
-				DEBUG(OneWireAddresse[i],HEX);
-				if (i<7)DEBUG(':');
+			if (CountBadTemperature==MaxBadTemperature) {
+				return -127;
+				
+				Serial.print("Плохой замер температуры в группе портов №");
+				Serial.print(OneWireInterfacePin);
+				Serial.print("\nДатчик №");
+				for (int i=0;i<8;i++){
+					Serial.print(OneWireAddresse[i],HEX);
+					if (i<7)DEBUG(':');
+				}
+				Serial.print("\n");
 			}
-			#endif
-			DEBUG("\n");
+			else CountBadTemperature++;
 			
 		}
 		delay(1);
@@ -181,13 +182,6 @@ void Room_c::Update(){
 	double temp = GetTemperature(); 
 	if (TimeOutCT>0){
 		unsigned long CurrentTime = millis();
-		DEBUG("Room:");
-		DEBUG(RoomNumber);
-		DEBUG(" |\tTimeOut:");
-		DEBUG(TimeOutCT);
-		DEBUG(" |\tCurrentTime:");
-		DEBUG(CurrentTime);
-		DEBUG("\n");
 		if (TimeOutCT < CurrentTime){
 			if((CurrentTime-TimeOutCT) < 0xFFFF){
 				SetControlTemp(false);
@@ -238,15 +232,11 @@ void Room_c::SetTimeOutCT(unsigned long i){
 		DEBUG("return\n");
 	}
 	unsigned long CurrentTime = millis();
-	if ((0xFFFFFFFF-CurrentTime)<i){
+	if ((0xFFFFFFFF-CurrentTime)<i)
 		TimeOutCT = i-(0xFFFFFFFF-CurrentTime);
-		DEBUG("if\n");
-	}
-	else {
+	else 
 		TimeOutCT = CurrentTime + i*1000;
-		DEBUG(TimeOutCT);
-		DEBUG(" - else\n");
-	}
+	
 	SetControlTemp(true);
 }
 /*
