@@ -18,17 +18,20 @@ void InitRelayModule()
 {
   pcf8574port1.begin(ADDR_1);
   pcf8574port2.begin(ADDR_2);
+  pcf8574port3.begin(ADDR_3);
   
   for (int i=0;i<8;i++)
   {
   pcf8574port1.digitalWrite(i, HIGH);
   pcf8574port2.digitalWrite(i, HIGH);
+  pcf8574port3.digitalWrite(i, HIGH);
   }
   
   for (int i=0;i<8;i++)
   {
   pcf8574port1.pinMode(i, OUTPUT);
   pcf8574port2.pinMode(i, OUTPUT);
+  pcf8574port3.pinMode(i, OUTPUT);
   }
   
   Serial.println("Inited relay module.");
@@ -131,6 +134,7 @@ void Rele_c::SetRele()
   int tmp = PinNumber-1;
   if (tmp<8) pcf8574port1.digitalWrite(tmp, LOW);
   else if (tmp<16) pcf8574port2.digitalWrite(tmp-8, LOW);
+  else if (tmp<24) pcf8574port3.digitalWrite(tmp-16, LOW);
   else
   {
     DEBUG("In function SetRalay is an incorrect PinNumber = ");
@@ -146,6 +150,7 @@ void Rele_c::ResetRele()
   int tmp = PinNumber-1;
   if (tmp<8) pcf8574port1.digitalWrite(tmp, HIGH);
   else if (tmp<16) pcf8574port2.digitalWrite(tmp-8, HIGH);
+  else if (tmp<24) pcf8574port3.digitalWrite(tmp-16, HIGH);
   else
   {
     DEBUG("In function ResetRalay is an incorrect PinNumber = ");
@@ -171,6 +176,7 @@ Room_c::Room_c(int room, int relePin, int wireInt, uint8_t* wireAdd)
 	MinTemp = MINIMAL_TEMPERATURE;
 	TimeOutCT = 0;
 	EnableControlTemp=false;
+	EnableMinTemp=false;
 	DEBUG("Created new room. Number of room is ");
 	DEBUG(RoomNumber);
 	DEBUG(".\n");
@@ -206,15 +212,17 @@ void Room_c::Update(){
 	else{
 		if (temp<MINIMAL_TEMPERATURE && !GetStateRele()) {
 			SetRele();
+			EnableMinTemp=true;
 			DEBUG("Автовключение системы обогрева №");
 			DEBUG(RoomNumber);
 			DEBUG("\n");
 		}
-		if (temp>MAXIMAL_TEMPERATURE && GetStateRele()) {
+		if ((temp>MAXIMAL_TEMPERATURE && GetStateRele()) || ((temp>(MINIMAL_TEMPERATURE+1)) && EnableMinTemp && GetStateRele())){
 			ResetRele();
 			DEBUG("Автовыключение системы обогрева №");
 			DEBUG(RoomNumber);
 			DEBUG("\n");
+			EnableMinTemp=false;
 		}
 	}
 }
@@ -231,11 +239,12 @@ void Room_c::SetTimeOutCT(unsigned long i){
 		return;
 		DEBUG("return\n");
 	}
+	i=*1000;
 	unsigned long CurrentTime = millis();
 	if ((0xFFFFFFFF-CurrentTime)<i)
 		TimeOutCT = i-(0xFFFFFFFF-CurrentTime);
 	else 
-		TimeOutCT = CurrentTime + i*1000;
+		TimeOutCT = CurrentTime + i;
 	
 	SetControlTemp(true);
 }
@@ -280,7 +289,7 @@ void Room_c::SetControlTemp(double temp){
 }
 /*
  *
- *
+ */
 void Room_c::SetControlTemp(bool state){
 	EnableControlTemp=state;
 	if (!state){
@@ -289,7 +298,7 @@ void Room_c::SetControlTemp(bool state){
 		ResetRele();
 	}
 }
- *
+/*
  *
  */
  void UpdataNextOne(){

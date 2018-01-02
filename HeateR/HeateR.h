@@ -12,7 +12,7 @@
 #define INPUT_PULLUP 2
 #endif
 
-#define NUMBER_OF_SOCKETS 16
+#define NUMBER_OF_SOCKETS 24
 #define PCF8574_BASE_ADD  0x20
 #define LIST_MAX_ROOM 32 // Максимально количество комнат в списке ListRoom_c
 #define LIST_MAX_WIRE 31  // Максимально количество интерфейсов в списке ListOneWire_c
@@ -21,7 +21,7 @@
 #define VERSION_HEATER 23 // Версия прошивки влияет на сохраненные настройки
 #define RESET_PIN 8 // пин который выведен на контакт ресет
 #define TIMEOUT_GETTEMP 5000 // количество мелискунд для повторного запроса температуры
-#define MINIMAL_TEMPERATURE 14.00
+#define MINIMAL_TEMPERATURE 10.00
 #define MAXIMAL_TEMPERATURE 30.00
 
 #define GETTIME() millis()
@@ -35,9 +35,8 @@
 /**-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*SOCKETS*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
 
 #define ADDR_1  PCF8574_BASE_ADD|0
-#define ADDR_2  PCF8574_BASE_ADD|1
-#define ADDR_3  PCF8574_BASE_ADD|3
-#define ADDR_4  PCF8574_BASE_ADD|7
+#define ADDR_2  PCF8574_BASE_ADD|3
+#define ADDR_3  PCF8574_BASE_ADD|7
 /*
  *
  */
@@ -103,6 +102,7 @@ class Room_c: public Sensor_c, public Rele_c{
 	double MinTemp;
 	double MaxTemp;
 	bool EnableControlTemp;
+	bool EnableMinTemp;
 public:
 	Room_c(int room, int relePin, int wireInt, uint8_t* wireAdd);
 	void Update();
