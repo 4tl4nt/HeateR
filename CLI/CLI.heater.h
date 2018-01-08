@@ -8,6 +8,17 @@
 
 #include <HeateR.h>
 
+#define MAX_TIME_OUT 60000
+
+#define EXIT_STATUS 0b10000000
+
+#define CHECK_FOR_EXIT if (Status_flag&EXIT_STATUS) return -127
+#define GO_TO_EXIT {\
+Status_flag |= EXIT_STATUS;\
+return -127;\
+}
+
+
 class item_c 
 {
 public:
@@ -20,11 +31,13 @@ class menu_c: public item_c
 public:
 	void action_p(void* function);
 };
-class ObjCLI/*: protected Stream*/ 
+class ObjCLI
 {
 public:
 	ObjCLI(Stream* s);
 	Stream* CliStream;
+	byte Status_flag;
+	unsigned long Time_Out_Exit;
 	char Buffer[100];
 	int printAllSensors(DallasTemperature* DallasTemperature_p);
 	int readNumCLI ();

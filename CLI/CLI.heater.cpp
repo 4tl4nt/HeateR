@@ -47,6 +47,7 @@ char const *Menu_1_1Items[NUMBER_ITEM_MENU_011+1]=
 ObjCLI::ObjCLI(Stream* s)
 {
 	CliStream=s;
+	Status_flag = 0;
 	DEBUG("New ObjCLI\n");
 }
 
@@ -84,7 +85,9 @@ void ObjCLI::printMenu(menu_c menu[],int size)
 }
 void ObjCLI::MainMenu (){
 	ListRoom_c* tmp;
+	Status_flag &= (~EXIT_STATUS);
 	while(1){
+		CHECK_FOR_EXIT;
 		printMenu(mainMenu, NUMBER_ITEM_MAIN);
 		switch(readNumCLI()){
 		case 1:
@@ -147,6 +150,7 @@ void ObjCLI::Menu_1_f (){
 	Room_c* room_p;
 	while (1)
 	{
+		CHECK_FOR_EXIT;
 		printCLI("\f\n\t\tCписок аудиторий:\n");
 		printAllRoom();
 		printMenu(Menu_1, NUMBER_ITEM_MENU_001);
@@ -223,16 +227,19 @@ Room_c* ObjCLI::NewRoom(){
 	d = readDoubleCLI();
 	printCLI("Номер группы портов датчика: ");
 	w = readDoubleCLI();
+	CHECK_FOR_EXIT;
 	ListOneWire_p = GetOneWire(w);
 	while(CliStream->read()!=(-1));
 	while (n==99) 
 	{
-		
+		CHECK_FOR_EXIT;
+		Time_Out_Exit = MAX_TIME_OUT + millis();
 		while (!c){
 			c = printAllSensors(ListOneWire_p->DallasTemperature_p);
 			if (CliStream->available()) return NULL;
 			if (!c) printCLI("Поиск...");
 			delay(10);
+			if (Time_Out_Exit<millis())GO_TO_EXIT;
 		}
 		printCLI("Выберите:\n(0...98)датчик\n(99)искать заново\n(100)выход\nСделайте свой выбор: ");
 		n = readDoubleCLI();
@@ -242,6 +249,7 @@ Room_c* ObjCLI::NewRoom(){
 			c=0;
 			continue;
 		}
+		CHECK_FOR_EXIT;
 	}
 	ListOneWire_p->DallasTemperature_p->getAddress(a, n);
 	if (ListOneWire_p->DallasTemperature_p->validAddress(a)) room = new Room_c(r,d,w,a);
@@ -287,10 +295,14 @@ int ObjCLI::printAllSensors(DallasTemperature* DallasTemperature_p)
 
 int ObjCLI::readNumCLI ()
 {
+	Time_Out_Exit = MAX_TIME_OUT + millis();
 	while(CliStream->read()!=(-1));
 	delay(1);
 	char tmp=0;
-	while (CliStream->available() == 0)UpDate();
+	while (CliStream->available() == 0){
+		UpDate();
+		if (Time_Out_Exit<millis()) GO_TO_EXIT;
+	}
 	CliStream->readBytes(&tmp, 1);
 	printCLI(tmp);
     printCLI("\n");
@@ -300,11 +312,15 @@ int ObjCLI::readNumCLI ()
 }
 double ObjCLI::readDoubleCLI()
 {
+	Time_Out_Exit = MAX_TIME_OUT + millis();
 	while(CliStream->read()!=(-1));
 	char tmp=0;
 	int i=0;
 	while (tmp != 0x0D&&tmp != 0x0A){
-		while (CliStream->available() == 0)UpDate();;
+		while (CliStream->available() == 0){
+			UpDate();
+			if (Time_Out_Exit<millis()) GO_TO_EXIT;
+		}
 		CliStream->readBytes(&tmp, 1);
 		Buffer[i++]=tmp;
 		printCLI(tmp);
@@ -345,8 +361,11 @@ void ObjCLI::printRoom(Room_c* tmp_p)
 
 char ObjCLI::WaitForAnyKey(){
 	printCLI("Нажмите любую клавишу...\n");
-	while (CliStream->available() == 0)UpDate();;
-		Buffer[0] = CliStream->read();
+	while (CliStream->available() == 0){
+		UpDate();
+		if (Time_Out_Exit<millis()) GO_TO_EXIT;
+	}
+	Buffer[0] = CliStream->read();
 	return Buffer[0];
 }
 
@@ -357,6 +376,7 @@ void ObjCLI::RemoveRoomFromCLI(){
 		printAllRoom();
 		printCLI("Ведите номер аудитории(99. выход):");
 		tmp_room = readDoubleCLI();
+		CHECK_FOR_EXIT;
 		if (tmp_room==99)return;
 		if (getRoom(tmp_room)==NULL){
 			printCLI("Аудитории не существует.\n");
@@ -367,10 +387,12 @@ void ObjCLI::RemoveRoomFromCLI(){
 		printCLI(tmp_room);
 		printCLI("-ю аудиторию?\n1-ДА\n0-НЕТ\n");
 		tmp = readNumCLI();
+		CHECK_FOR_EXIT;
 		if (!tmp) return;
 		printCLI("Точно точно???\n1-ДА\n0-НЕТ\n");
 		tmp = readNumCLI();
-		if (tmp==0) {return; DEBUG("В RemoveRoomFromCLI(), tmp==0");}
+		CHECK_FOR_EXIT;
+		if (tmp==0) return;
 		DeleteRoom(tmp_room);
 		return;
 	}
@@ -383,6 +405,7 @@ void ObjCLI::ControlRoomCLI()
 	if (p==NULL)return;
 	while(1)
 	{
+		CHECK_FOR_EXIT;
 		printCLI("\f");
 		printRoom(p);
 		printCLI("\ВКЛ/ВЫКЛ обогреватель\n0-ВЫКЛ\n1-ВКЛ\n2. Обновить\n3. Калибровать датчик\n4. Cброс калибровки датчика\n5. Настроить КК\n6. Выключить КК\n7. Удалить аудиторию\n9. Выход из управления\n");
@@ -423,6 +446,7 @@ void ObjCLI::ControlRoomCLI()
 void ObjCLI::ClimateControl(Room_c *p){
 	printCLI("Укажите температуру: ");
 	double temp = readDoubleCLI();
+	CHECK_FOR_EXIT;
 	if (temp < MINIMAL_TEMPERATURE || temp > MAXIMAL_TEMPERATURE){
 		printCLI("Указана некорректно!\n");
 		WaitForAnyKey();

@@ -44,9 +44,6 @@ void CommAPI(EthernetClient client){
       Serial.println(buff[i]);
       if (buff[i]==';') break;
     }
-	/*client.print("ECHO:");
-	client.write(buff, i+1);
-	client.print("\n");*/
     buff[6]=buff[8]='\0';
     num_room = atoi(&buff[4]);
     state = atoi(&buff[7]);

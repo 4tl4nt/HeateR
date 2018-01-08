@@ -21,7 +21,7 @@
 #define VERSION_HEATER 23 // Версия прошивки влияет на сохраненные настройки
 #define RESET_PIN 8 // пин который выведен на контакт ресет
 #define TIMEOUT_GETTEMP 5000 // количество мелискунд для повторного запроса температуры
-#define MINIMAL_TEMPERATURE 10.00
+#define MINIMAL_TEMPERATURE 15.00
 #define MAXIMAL_TEMPERATURE 30.00
 
 #define GETTIME() millis()
@@ -35,8 +35,8 @@
 /**-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*SOCKETS*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
 
 #define ADDR_1  PCF8574_BASE_ADD|0
-#define ADDR_2  PCF8574_BASE_ADD|3
-#define ADDR_3  PCF8574_BASE_ADD|7
+#define ADDR_2  PCF8574_BASE_ADD|7
+#define ADDR_3  PCF8574_BASE_ADD|3
 /*
  *
  */
@@ -106,7 +106,7 @@ class Room_c: public Sensor_c, public Rele_c{
 public:
 	Room_c(int room, int relePin, int wireInt, uint8_t* wireAdd);
 	void Update();
-	void SetControlTemp(bool state){EnableControlTemp=state;if (!state) { ResetRele(); TimeOutCT = 0;}};
+	void SetControlTemp(bool state);
 	void SetControlTemp(double min, double max);
 	void SetControlTemp(double temp);
 	bool GetControlTemp(){return EnableControlTemp;};

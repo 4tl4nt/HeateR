@@ -10,6 +10,7 @@
 
 PCF8574 pcf8574port1;//Обьект1 управлене микросхемой расширения GPIO, PCF8574
 PCF8574 pcf8574port2;//Обьект2 управлене микросхемой расширения GPIO, PCF8574
+PCF8574 pcf8574port3;//Обьект3 управлене микросхемой расширения GPIO, PCF8574
 ListRoom_c ListRoom_c::FirstRoom; // Первая комната в списке комнат
 /*
  *   Функция для конфигурации микросхемы PCF8574
@@ -239,7 +240,7 @@ void Room_c::SetTimeOutCT(unsigned long i){
 		return;
 		DEBUG("return\n");
 	}
-	i=*1000;
+	i *= 1000;
 	unsigned long CurrentTime = millis();
 	if ((0xFFFFFFFF-CurrentTime)<i)
 		TimeOutCT = i-(0xFFFFFFFF-CurrentTime);
@@ -293,8 +294,7 @@ void Room_c::SetControlTemp(double temp){
 void Room_c::SetControlTemp(bool state){
 	EnableControlTemp=state;
 	if (!state){
-		MaxTemp = MINIMAL_TEMPERATURE+1;
-		MinTemp = MINIMAL_TEMPERATURE;
+		TimeOutCT = 0;
 		ResetRele();
 	}
 }
