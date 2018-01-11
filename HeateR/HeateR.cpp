@@ -17,22 +17,40 @@ ListRoom_c ListRoom_c::FirstRoom; // Первая комната в списке
  */
 void InitRelayModule()
 {
+#ifdef ADDR_1
   pcf8574port1.begin(ADDR_1);
+#endif
+#ifdef ADDR_2
   pcf8574port2.begin(ADDR_2);
+#endif
+#ifdef ADDR_3
   pcf8574port3.begin(ADDR_3);
+#endif
   
   for (int i=0;i<8;i++)
   {
+#ifdef ADDR_1
   pcf8574port1.digitalWrite(i, HIGH);
+#endif
+#ifdef ADDR_2
   pcf8574port2.digitalWrite(i, HIGH);
+#endif
+#ifdef ADDR_3
   pcf8574port3.digitalWrite(i, HIGH);
+#endif
   }
   
   for (int i=0;i<8;i++)
   {
+#ifdef ADDR_1
   pcf8574port1.pinMode(i, OUTPUT);
+#endif
+#ifdef ADDR_2
   pcf8574port2.pinMode(i, OUTPUT);
+#endif
+#ifdef ADDR_3
   pcf8574port3.pinMode(i, OUTPUT);
+#endif
   }
   
   Serial.println("Inited relay module.");
@@ -130,13 +148,21 @@ Rele_c::Rele_c(int relePin)
 	ResetRele();
 }
 
-void Rele_c::SetRele()
+void Rele_c::SetRele(bool State)
 {
   int tmp = PinNumber-1;
-  if (tmp<8) pcf8574port1.digitalWrite(tmp, LOW);
-  else if (tmp<16) pcf8574port2.digitalWrite(tmp-8, LOW);
-  else if (tmp<24) pcf8574port3.digitalWrite(tmp-16, LOW);
+#ifdef ADDR_1
+  if (tmp<8) pcf8574port1.digitalWrite(tmp, State);
   else
+#endif
+#ifdef ADDR_2 
+	  if (tmp<16) pcf8574port2.digitalWrite(tmp-8, State);
+  else 
+#endif
+#ifdef ADDR_3
+      if (tmp<24) pcf8574port3.digitalWrite(tmp-16, State);
+  else
+#endif
   {
     DEBUG("In function SetRalay is an incorrect PinNumber = ");
     DEBUG(tmp);
@@ -148,18 +174,7 @@ void Rele_c::SetRele()
 
 void Rele_c::ResetRele()
 {
-  int tmp = PinNumber-1;
-  if (tmp<8) pcf8574port1.digitalWrite(tmp, HIGH);
-  else if (tmp<16) pcf8574port2.digitalWrite(tmp-8, HIGH);
-  else if (tmp<24) pcf8574port3.digitalWrite(tmp-16, HIGH);
-  else
-  {
-    DEBUG("In function ResetRalay is an incorrect PinNumber = ");
-    DEBUG(tmp);
-	DEBUG(".\n");
-	return;
-  }
-  CurrentState=0;
+	SetRele(1);
 }
 /*
  *
@@ -448,6 +463,7 @@ void DeleteRoom(int room){
 		p=p->next_p;
 	}
 }
+
 double RDFromEEPROM(int &addr){//RestoryDoubleFromEEPROM
 	double tmp = EEPROM.read(addr++);
 	delay(4);

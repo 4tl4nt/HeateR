@@ -24,6 +24,14 @@
 #define MINIMAL_TEMPERATURE 15.00
 #define MAXIMAL_TEMPERATURE 30.00
 
+#define START_ADD_CONF_IP 6
+#define START_ADD_CONF_MASK 6
+#define START_ADD_CONF_GETAWEY 6
+#define START_ADD_CONF_DNS 6
+#define START_ADD_CONF_ROOM 6
+#define LENGH_USERNAME 10
+#define LENGH_PASSWORD 10
+
 #define GETTIME() millis()
 
 #include <inttypes.h>
@@ -86,7 +94,7 @@ public:
 	int PinNumber;
 	int CurrentState;
 	Rele_c(int relePin);
-	void SetRele();
+	void SetRele(bool State=0);
 	void ResetRele();
 	int GetStateRele(){return CurrentState;};
 };
