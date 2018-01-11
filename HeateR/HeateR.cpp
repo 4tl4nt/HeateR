@@ -17,6 +17,13 @@ ListRoom_c ListRoom_c::FirstRoom; // Первая комната в списке
  */
 void InitRelayModule()
 {
+  if (TEST_MODE){
+	  for (int i=2;i<5;i++)
+	  {
+		pinMode(i,OUTPUT);
+		digitalWrite(i,LOW);
+	  }
+  }
 #ifdef ADDR_1
   pcf8574port1.begin(ADDR_1);
 #endif
@@ -151,6 +158,10 @@ Rele_c::Rele_c(int relePin)
 void Rele_c::SetRele(bool State)
 {
   int tmp = PinNumber-1;
+  if (TEST_MODE){
+	digitalWrite((PinNumber%3)+2,State);
+  }
+  else
 #ifdef ADDR_1
   if (tmp<8) pcf8574port1.digitalWrite(tmp, State);
   else
@@ -169,7 +180,7 @@ void Rele_c::SetRele(bool State)
 	DEBUG(".\n");
 	return;
   }
-  CurrentState=1;
+  CurrentState=!State;
 }
 
 void Rele_c::ResetRele()
@@ -463,7 +474,13 @@ void DeleteRoom(int room){
 		p=p->next_p;
 	}
 }
-
+/*
+ *
+ */
+/**-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* EEPROM *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
+/*
+ *
+ */
 double RDFromEEPROM(int &addr){//RestoryDoubleFromEEPROM
 	double tmp = EEPROM.read(addr++);
 	delay(4);
@@ -474,8 +491,10 @@ double RDFromEEPROM(int &addr){//RestoryDoubleFromEEPROM
 }
 void RestoryListFromEEPROM()
 {
-	if (EEPROM.read(0) != VERSION_HEATER) return;
-	int addres=6, count = EEPROM.read(5);
+	DEBUG("RestoryListFromEEPROM(1)\n");
+	if (EEPROM.read(ADD_VERSION) != VERSION_HEATER) return;
+	int addres=START_ADD_CONF_ROOMS, count = EEPROM.read(ADD_COUNT_SAVE_LIST);
+	DEBUG("RestoryListFromEEPROM(2)\n");
 	ListRoom_c *p = &ListRoom_c::FirstRoom;
 	if (p->room_p!=NULL) return;
 	int room, relePin, wireInt;
@@ -530,8 +549,8 @@ void SDToEEPROM(int &addr, double num){//SaveDoubleToEEPROM
 }
 void SaveListToEEPROM()
 {
-	int addres=6, count = 0;
-	EEPROM.write(0, VERSION_HEATER);
+	int addres=START_ADD_CONF_ROOMS, count = 0;
+	EEPROM.write(ADD_VERSION, VERSION_HEATER);
 	delay(4);
 	ListRoom_c *p = &ListRoom_c::FirstRoom;
 	double DoubleNum;
@@ -578,10 +597,30 @@ void SaveListToEEPROM()
 		DEBUG("\n---------------------------\n");
 		p=p->next_p;
 	}
-	EEPROM.write(5, count);
+	EEPROM.write(ADD_COUNT_SAVE_LIST, count);
 	delay(4);
 	DEBUG("Wroten ");
 	
 	DEBUG(count);
 	DEBUG(" rooms.\nSaveListToEEPROM is done.\n");
+}
+void ReadNetworkSetingsEEPROM(NetworkSetings *p){
+	/*if (EEPROM.read(START_ADD_CONF_IP)==0)*/{
+		for (int i=0;i<4;i++)
+		{
+			p->ip[i] = DEFAULT_IP[i];
+			p->mask[i] = DEFAULT_MASK[i];
+			p->gateway[i] = DEFAULT_GATEWAY[i];
+			p->dns[i] = DEFAULT_DNS[i];
+		}
+		for (int i=0;i<6;i++)p->mac[i] = DEFAULT_MAC[i];
+		return;
+	}
+	for (int i=0;i<4;i++){
+		p->ip[i] = EEPROM.read(START_ADD_CONF_IP+i);
+		p->mask[i] = EEPROM.read(START_ADD_CONF_MASK+i);
+		p->gateway[i] = EEPROM.read(START_ADD_CONF_GATEWAY+i);
+		p->dns[i] = EEPROM.read(START_ADD_CONF_DNS+i);
+	}
+	for (int i=0;i<6;i++)p->mac[i] = EEPROM.read(START_ADD_CONF_MAC+i);
 }

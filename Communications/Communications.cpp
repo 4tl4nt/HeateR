@@ -2,12 +2,12 @@
 
 char timeServer[] = "ntp.time.in.ua";
 byte timeServerIP[] = {62,149,0,30};
-
+/*
 byte m_mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEF };
 byte m_ip[] = {10,4,11,250};
 byte m_mask[] = {255,255,255,0};
 byte m_gateway[] = {10,4,11,254};
-byte m_dns[] = {8,8,8,8};
+byte m_dns[] = {8,8,8,8};*/
 unsigned int portAPI = 12345;
 unsigned int portCLI = 12346;
 
@@ -22,9 +22,20 @@ EthernetUDP Udp;
 ntp_c *ntp;
 #endif
 void InitEthernet(){
-	Ethernet.begin(m_mac, m_ip, m_dns, m_gateway, m_mask);
+	NetworkSetings *p = new NetworkSetings;
+	ReadNetworkSetingsEEPROM(p);
+    Serial.print("IP:");
+    Serial.print((int)p->ip[0]);
+    Serial.print(".");
+    Serial.print((int)p->ip[1]);
+    Serial.print(".");
+    Serial.print((int)p->ip[2]);
+    Serial.print(".");
+    Serial.println(p->ip[3]);
+	Ethernet.begin(p->mac, p->ip, p->dns, p->gateway, p->mask);
 	serverCLIoverTCP.begin();
 	serverAPI.begin();
+	delete p;
 #if USE_NTP
 	ntp = new ntp_c;
 	Udp.begin(ntp->localPort);
@@ -37,13 +48,14 @@ void CommAPI(EthernetClient client){
 	int num_room=0, state=0;
     Serial.println("connectAPI");
 	int i=0;
+    Serial.print("read: ");
     for(;i<SIZE_LOOP_BUF;i++)
     {
-      Serial.print("read ");
       buff[i]=client.read();
-      Serial.println(buff[i]);
-      if (buff[i]==';') break;
+      if (buff[i]==';'||buff[i]==-1) break;
+      Serial.print(buff[i]);
     }
+    Serial.println();
     buff[6]=buff[8]='\0';
     num_room = atoi(&buff[4]);
     state = atoi(&buff[7]);
@@ -59,6 +71,7 @@ void CommAPI(EthernetClient client){
           state = atoi(&buff[9]);
           room_p->SetTimeOutCT(state);
         }
+		else client.print("ERROR;");
       }
       else client.print("ERROR;");
     }
@@ -81,6 +94,7 @@ void CommAPI(EthernetClient client){
       }
       else client.print("ERROR;");
     }
+	else client.print("ERROR;");
     while(client.read()!=(-1));
   Serial.println("listen...");
   }

@@ -24,13 +24,37 @@
 #define MINIMAL_TEMPERATURE 15.00
 #define MAXIMAL_TEMPERATURE 30.00
 
+
+#define ADD_VERSION 4
+#define ADD_COUNT_SAVE_LIST 5
 #define START_ADD_CONF_IP 6
-#define START_ADD_CONF_MASK 6
-#define START_ADD_CONF_GETAWEY 6
-#define START_ADD_CONF_DNS 6
-#define START_ADD_CONF_ROOM 6
+#define START_ADD_CONF_MASK 10
+#define START_ADD_CONF_GATEWAY 14
+#define START_ADD_CONF_DNS 18
+#define START_ADD_CONF_PORT_API 22
+#define START_ADD_CONF_PORT_CLI 24
+#define START_ADD_CONF_MAC 26
 #define LENGH_USERNAME 10
 #define LENGH_PASSWORD 10
+#define START_ADD_CONF_USERNAME 32
+#define START_ADD_CONF_PASSWORD LENGH_USERNAME+START_ADD_CONF_USERNAME
+#define START_ADD_CONF_ROOMS LENGH_PASSWORD+START_ADD_CONF_PASSWORD
+
+typedef struct{
+	byte mac[6];
+	byte ip[4];
+    byte mask[4];
+	byte gateway[4];
+	byte dns[4];
+} NetworkSetings;
+const byte DEFAULT_MAC[] = { 0x00, 0xFD, 0xBF, 0xFF, 0xEE, 0xEF };
+const byte DEFAULT_IP[] = {192,168,1,99};
+const byte DEFAULT_MASK[] = {255,255,255,0};
+const byte DEFAULT_GATEWAY[] = {192,168,1,1};
+const byte DEFAULT_DNS[] = {8,8,8,8};
+const unsigned int DEFAULT_portAPI = 12345;
+const unsigned int DEFAULT_portCLI = 12346;
+
 
 #define GETTIME() millis()
 
@@ -42,9 +66,10 @@
 
 /**-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*SOCKETS*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
 
-#define ADDR_1  PCF8574_BASE_ADD|0
-#define ADDR_2  PCF8574_BASE_ADD|7
-#define ADDR_3  PCF8574_BASE_ADD|3
+//#define ADDR_1  PCF8574_BASE_ADD|0
+//#define ADDR_2  PCF8574_BASE_ADD|7
+//#define ADDR_3  PCF8574_BASE_ADD|3
+#define TEST_MODE 1
 /*
  *
  */
@@ -165,6 +190,7 @@ void addNewRoom(Room_c* room);
 void DeleteRoom(int room);
 void RestoryListFromEEPROM();
 void SaveListToEEPROM();
+void ReadNetworkSetingsEEPROM(NetworkSetings *p);
 
 #include <CLI.heater.h>
 #endif
