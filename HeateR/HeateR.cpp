@@ -514,11 +514,7 @@ void RestoryListFromEEPROM()
 		}
 		DEBUG("\n");
 		p->room_p = new Room_c(room, relePin, wireInt, wireAdd);
-		DEBUG("Read CurrentState\n");
-		p->room_p->CurrentState = EEPROM.read(addres++);
-		delay(4);
-		if (p->room_p->CurrentState)p->room_p->SetRele();
-		else p->room_p->ResetRele();
+		p->room_p->ResetRele();
 		
 		DEBUG("Read CalibrationTemperature: ");
 		tmp = RDFromEEPROM(addres);
@@ -532,7 +528,7 @@ void RestoryListFromEEPROM()
 		DEBUG(tmp2);
 		DEBUG("\n");
 		p->room_p->SetControlTemp(tmp, tmp2);
-		p->room_p->SetControlTemp((bool)(EEPROM.read(addres++)));
+		p->room_p->SetControlTemp(false);
 		p->next_p = new ListRoom_c;
 		DEBUG("\n---------------------------\n");
 		p=p->next_p;
@@ -569,8 +565,6 @@ void SaveListToEEPROM()
 			DEBUG(p->room_p->OneWireAddresse[i], HEX);
 			DEBUG(":");
 		}
-		delay(4);DEBUG("\nWrite CurrentState");
-		EEPROM.write(addres++, p->room_p->CurrentState);
 		delay(4);
 		
 		DoubleNum = p->room_p->GetCalibration();
@@ -588,8 +582,6 @@ void SaveListToEEPROM()
 		SDToEEPROM(addres, DoubleNum);
 		DEBUG(DoubleNum);
 		delay(4);
-		DEBUG("\nWrite State Climate Control\n");
-		EEPROM.write(addres++, p->room_p->GetControlTemp());
 		DEBUG("Wroten ");
 		DEBUG(addres);
 		DEBUG(" bytes");

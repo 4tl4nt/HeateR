@@ -42,6 +42,7 @@ void loop() {
       SerialCLI->InitMenu();
     }
     SerialCLI->MainMenu();
+    clientCLI.stop();
     Serial.println("listen...");
   }
 }

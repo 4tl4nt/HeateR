@@ -12,10 +12,10 @@
 
 #define EXIT_STATUS 0b10000000
 
-#define CHECK_FOR_EXIT if (Status_flag&EXIT_STATUS) return -127
+#define CHECK_FOR_EXIT if (Status_flag&EXIT_STATUS) break
 #define GO_TO_EXIT {\
 Status_flag |= EXIT_STATUS;\
-return -127;\
+break;\
 }
 
 

@@ -87,7 +87,7 @@ void ObjCLI::MainMenu (){
 	ListRoom_c* tmp;
 	Status_flag &= (~EXIT_STATUS);
 	while(1){
-		CHECK_FOR_EXIT;
+		CHECK_FOR_EXIT; 
 		printMenu(mainMenu, NUMBER_ITEM_MAIN);
 		switch(readNumCLI()){
 		case 1:
@@ -142,6 +142,7 @@ void ObjCLI::MainMenu (){
 		break;
 		}
 	}
+	return;//"Выход из меню"
 }
 //void getAllRoom(ptrFunc stream);
 void ObjCLI::Menu_1_f (){
@@ -150,7 +151,7 @@ void ObjCLI::Menu_1_f (){
 	Room_c* room_p;
 	while (1)
 	{
-		CHECK_FOR_EXIT;
+		CHECK_FOR_EXIT;//here is allow
 		printCLI("\f\n\t\tCписок аудиторий:\n");
 		printAllRoom();
 		printMenu(Menu_1, NUMBER_ITEM_MENU_001);
@@ -220,42 +221,48 @@ Room_c* ObjCLI::NewRoom(){
 	int c=0, r, d, w, n=99;
 	DeviceAddress a;
 	ListOneWire_c* ListOneWire_p=NULL;
-	
-	printCLI("\f\n\t\tДобавление новой аудитории.\nАудитория: ");
-	r = readDoubleCLI();
-	printCLI("Номер розетки: ");
-	d = readDoubleCLI();
-	printCLI("Номер группы портов датчика: ");
-	w = readDoubleCLI();
-	CHECK_FOR_EXIT;
-	ListOneWire_p = GetOneWire(w);
-	while(CliStream->read()!=(-1));
-	while (n==99) 
-	{
+	while(true){
+		printCLI("\f\n\t\tДобавление новой аудитории.\nАудитория: ");
+		r = readDoubleCLI();
 		CHECK_FOR_EXIT;
-		Time_Out_Exit = MAX_TIME_OUT + millis();
-		while (!c){
-			c = printAllSensors(ListOneWire_p->DallasTemperature_p);
-			if (CliStream->available()) return NULL;
-			if (!c) printCLI("Поиск...");
-			delay(10);
-			if (Time_Out_Exit<millis())GO_TO_EXIT;
-		}
-		printCLI("Выберите:\n(0...98)датчик\n(99)искать заново\n(100)выход\nСделайте свой выбор: ");
-		n = readDoubleCLI();
-		if (n==100) return NULL;
-		if (n > c-1) {
-			n=99;
-			c=0;
-			continue;
+		printCLI("Номер розетки: ");
+		d = readDoubleCLI();
+		CHECK_FOR_EXIT;
+		printCLI("Номер группы портов датчика: ");
+		w = readDoubleCLI();
+		CHECK_FOR_EXIT;
+		ListOneWire_p = GetOneWire(w);
+		while(CliStream->read()!=(-1));
+		while (n==99) 
+		{
+			CHECK_FOR_EXIT;
+			Time_Out_Exit = MAX_TIME_OUT + millis();
+			while (!c){
+				c = printAllSensors(ListOneWire_p->DallasTemperature_p);
+				if (CliStream->available()) return NULL;
+				if (!c) printCLI("Поиск...");
+				delay(10);
+				if (Time_Out_Exit<millis())GO_TO_EXIT;
+			}
+			CHECK_FOR_EXIT;
+			printCLI("Выберите:\n(0...98)датчик\n(99)искать заново\n(100)выход\nСделайте свой выбор: ");
+			n = readDoubleCLI();
+			CHECK_FOR_EXIT;
+			if (n==100) return NULL;
+			if (n > c-1) {
+				n=99;
+				c=0;
+				continue;
+			}
+			CHECK_FOR_EXIT;
 		}
 		CHECK_FOR_EXIT;
+		ListOneWire_p->DallasTemperature_p->getAddress(a, n);
+		if (ListOneWire_p->DallasTemperature_p->validAddress(a)) room = new Room_c(r,d,w,a);
+		else {printCLI("Упссс... Что-то произошло, комната не добавленна!"); return NULL;}
+		printCLI("Готово!!!\n");
+		return room;
 	}
-	ListOneWire_p->DallasTemperature_p->getAddress(a, n);
-	if (ListOneWire_p->DallasTemperature_p->validAddress(a)) room = new Room_c(r,d,w,a);
-	else {printCLI("Упссс... Что-то произошло, комната не добавленна!"); return NULL;}
-	printCLI("Готово!!!\n");
-	return room;
 }
 
 int ObjCLI::printAllSensors(DallasTemperature* DallasTemperature_p)
@@ -392,7 +399,7 @@ void ObjCLI::RemoveRoomFromCLI(){
 		printCLI("Точно точно???\n1-ДА\n0-НЕТ\n");
 		tmp = readNumCLI();
 		CHECK_FOR_EXIT;
-		if (tmp==0) return;
+		//if (tmp==0) return;
 		DeleteRoom(tmp_room);
 		return;
 	}
@@ -445,12 +452,16 @@ void ObjCLI::ControlRoomCLI()
 }
 void ObjCLI::ClimateControl(Room_c *p){
 	printCLI("Укажите температуру: ");
-	double temp = readDoubleCLI();
-	CHECK_FOR_EXIT;
-	if (temp < MINIMAL_TEMPERATURE || temp > MAXIMAL_TEMPERATURE){
-		printCLI("Указана некорректно!\n");
-		WaitForAnyKey();
-		return;
+	while (true){
+		double temp = readDoubleCLI();
+		CHECK_FOR_EXIT;
+		if (temp < MINIMAL_TEMPERATURE || temp > MAXIMAL_TEMPERATURE){
+			printCLI("Указана некорректно!\n");
+			WaitForAnyKey();
+			break;
+		}
+		p->SetControlTemp(temp);
+		break;
 	}
-	p->SetControlTemp(temp);
+	return;
 }
