@@ -10,6 +10,7 @@
 
 #define SIZE_LOOP_BUF 30
 #define USE_NTP 0
+#define TIME_OUT_SOCKET 10
 #if USE_NTP
 extern char timeServer[];
 #endif
@@ -28,15 +29,16 @@ extern EthernetClient clientAPI, clientCLI;
 
 void InitEthernet();
 void CommAPI(EthernetClient client);
-void UpdateSocketTimer(){
-	
-}
 
-class ListEthernetClient_c {
+class EthernetClient_list {
 public:
-	ListEthernetClient_c* next_p;
-	unsigned long TimeToClose;
+    EthernetClient_list();
+	EthernetClient_list* next_p;
+	int TimeToClose;
+	uint8_t socketNUM;
 };
+void UpdateClientEthernet();
+void NewClientEthernet(uint8_t Socket);
 
 #if USE_NTP
 #define NTP_PACKET_SIZE 48 // NTP time stamp is in the first 48 bytes of the message

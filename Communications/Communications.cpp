@@ -39,6 +39,7 @@ void InitEthernet(){
 void CommAPI(EthernetClient client){
   if (client) 
   {
+	NewClientEthernet(client.getSocketNumber());
 	int num_room=0, state=0;
     Serial.println("connectAPI");
 	int i=0;
@@ -91,8 +92,63 @@ void CommAPI(EthernetClient client){
 	else client.print("ERROR;");
     while(client.read()!=(-1));
   Serial.println("listen...");
-  client.stop();
+  //client.stop();
   }
+}
+
+EthernetClient_list FirstEthernetClient;
+EthernetClient_list::EthernetClient_list(){
+	next_p = NULL;
+	TimeToClose = 99;
+	socketNUM = MAX_SOCK_NUM;
+}
+void UpdateClientEthernet(){
+	static unsigned long Timer = 1000 + millis();
+	if (millis()>Timer){
+		EthernetClient_list *tmp_p, *p;
+		tmp_p = p = &FirstEthernetClient;
+		EthernetClient *Client;
+		while (p->next_p != NULL) {
+			if (p->TimeToClose>0) p->TimeToClose--;
+			else {
+				Client = new EthernetClient(p->socketNUM);
+				Client->stop();
+				if (p->next_p->next_p!=NULL){
+					p->socketNUM = p->next_p->socketNUM;
+					p->TimeToClose = p->next_p->TimeToClose;
+					tmp_p = p->next_p;
+					p->next_p = p->next_p->next_p;
+					delete tmp_p;
+				}
+				else {
+					delete p->next_p;
+					p->next_p = NULL;
+					p->TimeToClose = 99;
+					p->socketNUM = MAX_SOCK_NUM;
+				}
+				break;
+			}
+			tmp_p = p;
+			p = p->next_p;
+		}
+		Timer = 1000 + millis();
+	}
+}
+
+void NewClientEthernet(uint8_t Socket){
+	EthernetClient_list* p = &FirstEthernetClient;
+	while (p->next_p != NULL) {
+		if (p->socketNUM == Socket) {
+			p->TimeToClose = TIME_OUT_SOCKET;
+			return;
+		}
+		p = p->next_p;
+	}
+	if (p->next_p==NULL) {
+		p->next_p = new EthernetClient_list;
+	}
+	p->socketNUM = Socket;
+	p->TimeToClose = TIME_OUT_SOCKET;
 }
 
 #if USE_NTP

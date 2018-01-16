@@ -12,6 +12,7 @@ void UpDate (){
   UpdataNextOne();
   clientAPI = serverAPI.available();
   CommAPI(clientAPI);
+  UpdateClientEthernet();
 }
 
 void setup() {
