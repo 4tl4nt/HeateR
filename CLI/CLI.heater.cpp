@@ -88,6 +88,18 @@ void ObjCLI::MainMenu (){
 	ListRoom_c* tmp;
 	Status_flag &= (~EXIT_STATUS);
 	while(1){
+		printCLI("\f");
+		printCLI("user:");
+		ReadString (&Buffer[0], LENGH_USERNAME+1);
+		printCLI("password:");
+		ReadString (&Buffer[LENGH_USERNAME+1], LENGH_PASSWORD+1);
+		GetUserName(&Buffer[LENGH_USERNAME+1+LENGH_PASSWORD+1],&Buffer[LENGH_USERNAME+1+LENGH_PASSWORD+1+LENGH_USERNAME+1]);
+		if (!strcmp(&Buffer[LENGH_USERNAME+1+LENGH_PASSWORD+1],&Buffer[0])&&!
+						strcmp(&Buffer[LENGH_USERNAME+1+LENGH_PASSWORD+1+LENGH_USERNAME+1],&Buffer[LENGH_USERNAME+1])){
+			break;
+		}
+	}
+	while(1){
 		CHECK_FOR_EXIT; 
 		printMenu(mainMenu, NUMBER_ITEM_MAIN);
 		switch(readNumCLI()){
@@ -550,9 +562,25 @@ void ObjCLI::PrintMainSettings() {
 			for (int i=0;i<4;i++){ NetSets.dns[i] = b[i];}
 		break;
 			case 5: 
-			
+			printCLI("Пункт не доступен");
 		break;
+		
+		
+		
 			case 6: 
+			printCLI("\nЛогин: ");
+			if (ReadString(&Buffer[0], LENGH_USERNAME+1)==-1){
+				printCLI("Не верный ввод");
+				break;
+			}
+			printCLI("\nПароль: ");
+			if (ReadString(&Buffer[LENGH_USERNAME+1], LENGH_PASSWORD+1)==-1){
+				printCLI("Не верный ввод");
+				break;
+			}
+			SaveUserName(&Buffer[0],&Buffer[LENGH_USERNAME+1]);
+			
+			
 			
 		break;
 			case 7: 

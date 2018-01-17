@@ -625,7 +625,28 @@ void WriteNetworkSettingsEEPROM(NetworkSettings *p){
 	}
 	for (int i=0;i<6;i++)EEPROM.write(START_ADD_CONF_MAC+i,p->mac[i]);
 }
-
+void GetUserName(char *user, char *pass){
+	int i;
+	for (i=0; i<LENGH_USERNAME;i++){
+		user[i]=EEPROM.read(START_ADD_CONF_USERNAME+i);
+	}
+	for (i=0; i<LENGH_PASSWORD;i++){
+		pass[i]=EEPROM.read(START_ADD_CONF_PASSWORD+i);
+	}
+}
+void SaveUserName(char *user, char *pass){
+	int i;
+	for (i=0; i<LENGH_USERNAME;i++){
+		EEPROM.write(START_ADD_CONF_USERNAME+i,user[i]);
+		if (user[i]==0)break;
+	}
+	for (; i<LENGH_USERNAME;i++)EEPROM.write(START_ADD_CONF_USERNAME+i,0);
+	for (i=0; i<LENGH_PASSWORD;i++){
+		EEPROM.write(START_ADD_CONF_PASSWORD+i,pass[i]);
+		if (pass[i]==0)break;
+	}
+	for (; i<LENGH_PASSWORD;i++)EEPROM.write(START_ADD_CONF_PASSWORD+i,0);
+}
 
 
 

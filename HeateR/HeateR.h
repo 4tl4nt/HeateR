@@ -192,6 +192,8 @@ void RestoryListFromEEPROM();
 void SaveListToEEPROM();
 void ReadNetworkSettingsEEPROM(NetworkSettings *p);
 void WriteNetworkSettingsEEPROM(NetworkSettings *p);
+void GetUserName(char *user, char *pass);
+void SaveUserName(char *user, char *pass);
 
 #include <CLI.heater.h>
 #endif
