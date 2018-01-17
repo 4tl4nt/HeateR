@@ -2,12 +2,6 @@
 
 char timeServer[] = "ntp.time.in.ua";
 byte timeServerIP[] = {62,149,0,30};
-/*
-byte m_mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEF };
-byte m_ip[] = {10,4,11,250};
-byte m_mask[] = {255,255,255,0};
-byte m_gateway[] = {10,4,11,254};
-byte m_dns[] = {8,8,8,8};*/
 unsigned int portAPI = 12345;
 unsigned int portCLI = 12346;
 
@@ -97,6 +91,7 @@ void CommAPI(EthernetClient client){
 	else client.print("ERROR;");
     while(client.read()!=(-1));
   Serial.println("listen...");
+  client.stop();
   }
 }
 

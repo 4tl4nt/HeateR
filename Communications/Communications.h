@@ -28,6 +28,15 @@ extern EthernetClient clientAPI, clientCLI;
 
 void InitEthernet();
 void CommAPI(EthernetClient client);
+void UpdateSocketTimer(){
+	
+}
+
+class ListEthernetClient_c {
+public:
+	ListEthernetClient_c* next_p;
+	unsigned long TimeToClose;
+};
 
 #if USE_NTP
 #define NTP_PACKET_SIZE 48 // NTP time stamp is in the first 48 bytes of the message
