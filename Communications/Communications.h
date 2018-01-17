@@ -15,11 +15,6 @@
 extern char timeServer[];
 #endif
 
-extern byte m_mac[];
-extern byte m_ip[];
-extern byte m_mask[];
-extern byte m_gateway[];
-extern byte m_dns[];
 extern unsigned int portAPI;
 extern unsigned int portCLI;
 
@@ -29,15 +24,6 @@ extern EthernetClient clientAPI, clientCLI;
 
 void InitEthernet();
 void CommAPI(EthernetClient client);
-void UpdateSocketTimer(){
-	
-}
-
-class ListEthernetClient_c {
-public:
-	ListEthernetClient_c* next_p;
-	unsigned long TimeToClose;
-};
 
 class EthernetClient_list {
 public:

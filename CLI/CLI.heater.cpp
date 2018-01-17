@@ -6,7 +6,7 @@
 #define DEBUG(str, a...)
 #endif
 
-#define NUMBER_ITEM_MAIN 7
+#define NUMBER_ITEM_MAIN 8
 menu_c mainMenu[NUMBER_ITEM_MAIN+1];
 const char *MainItems[NUMBER_ITEM_MAIN+1]=
 {
@@ -15,6 +15,7 @@ const char *MainItems[NUMBER_ITEM_MAIN+1]=
 	"Показать температуру в аудиториях",
 	"Показать включенные обогреватели",
 	"Сохранить в постоянную память",
+	"Сетевые настройки",
 	"Сброс настроек",
 	"Перезагрузить",
 	"Выход из меню"
@@ -125,15 +126,18 @@ void ObjCLI::MainMenu (){
 			printCLI("Сохраненно\n");
 			WaitForAnyKey();
 		break;
-		case 5://"Сброс настрек",
+		case 5:
+			PrintMainSettings();
+		break;
+		case 6://"Сброс настрек",
 			printCLI("Вы точно хотите сбросить настройки?\n9. Да\n1. Нет\n");
 			if (readNumCLI()==9) HeaterReBoot(ResetMode);
 		break;
-		case 6://"Перезагрузить",
+		case 7://"Перезагрузить",
 			printCLI("Вы точно хотите перезагрузить устройство?\nВсе не несохраненные настройки будут потеряны.\nПродолжить?\n9. Да\n1. Нет\n");
 			if (readNumCLI()==9) HeaterReBoot(ResetMode);
 		break;
-		case 7:
+		case 9:
 			while(CliStream->read()!=(-1));
 			return;//"Выход из меню"
 		break;
@@ -465,3 +469,154 @@ void ObjCLI::ClimateControl(Room_c *p){
 	}
 	return;
 }
+/**-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*Main Settings*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
+void ObjCLI::PrintMainSettings() {
+	NetworkSettings NetSets;
+	ReadNetworkSettingsEEPROM(&NetSets);
+	byte b[4];
+	while(1)
+	{
+		CHECK_FOR_EXIT;
+		printCLI("\f\n\t\tNetwork Settings\n");
+		printCLI("IP:\t ");
+		for (int i=0;i<4;i++){ printCLI(NetSets.ip[i]);if(i<3)printCLI('.');}
+		printCLI("\nMASK:\t ");
+		for (int i=0;i<4;i++){ printCLI(NetSets.mask[i]);if(i<3)printCLI('.');}
+		printCLI("\nGETAWEY: ");
+		for (int i=0;i<4;i++){ printCLI(NetSets.gateway[i]);if(i<3)printCLI('.');}
+		printCLI("\nDNS:\t ");
+		for (int i=0;i<4;i++){ printCLI(NetSets.dns[i]);if(i<3)printCLI('.');}
+		printCLI("\nMAC:\t ");
+		for (int i=0;i<6;i++){ printCLI(NetSets.mac[i]);if(i<5)printCLI(':');}
+		printCLI("\nConfigured user name and password: ");
+		
+		printCLI("\n1. Настроить IP");
+		printCLI("\n2. Настроить MASK");
+		printCLI("\n3. Настроить GETAWEY");
+		printCLI("\n4. Настроить DNS");
+		printCLI("\n5. Настроить MAC");
+		printCLI("\n6. Настроить Логин и Пароль");
+		printCLI("\n7. Сохранить");
+		printCLI("\n9. Выход\n");
+		
+		
+		switch(readNumCLI()){
+			case 1: 
+			printCLI("Введите IP: ");
+			if (ReadString(&Buffer[0], 20)==-1){
+				DEBUG("ReadString -1\n");
+				break;
+			}
+			if (ReadIP(&Buffer[0], &b[0])==-1){
+				DEBUG("ReadIP -1\n");
+				break;
+			}
+			for (int i=0;i<4;i++){ NetSets.ip[i] = b[i];}
+		break;
+			case 2: 
+			printCLI("Введите MASK: ");
+			if (ReadString(&Buffer[0], 20)==-1){
+				DEBUG("ReadString -1\n");
+				break;
+			}
+			if (ReadIP(&Buffer[0], &b[0])==-1){
+				DEBUG("ReadIP -1\n");
+				break;
+			}
+			for (int i=0;i<4;i++){ NetSets.mask[i] = b[i];}
+		break;
+			case 3: 
+			printCLI("Введите GETAWEY: ");
+			if (ReadString(&Buffer[0], 20)==-1){
+				DEBUG("ReadString -1\n");
+				break;
+			}
+			if (ReadIP(&Buffer[0], &b[0])==-1){
+				DEBUG("ReadIP -1\n");
+				break;
+			}
+			for (int i=0;i<4;i++){ NetSets.gateway[i] = b[i];}
+		break;
+			case 4: 
+			printCLI("Введите DNS: ");
+			if (ReadString(&Buffer[0], 20)==-1){
+				DEBUG("ReadString -1\n");
+				break;
+			}
+			if (ReadIP(&Buffer[0], &b[0])==-1){
+				DEBUG("ReadIP -1\n");
+				break;
+			}
+			for (int i=0;i<4;i++){ NetSets.dns[i] = b[i];}
+		break;
+			case 5: 
+			
+		break;
+			case 6: 
+			
+		break;
+			case 7: 
+			WriteNetworkSettingsEEPROM(&NetSets);
+			printCLI("\nСохраненно.\nНастройки будут применены после перезагрузки!\n");
+			WaitForAnyKey();
+		break;
+			case 9: 
+			return;
+		break;
+			default: 
+		break;
+		}
+	}
+}
+int ObjCLI::ReadString (char *buf, unsigned int length){
+	DEBUG("\nRI: ");
+	int i;
+	for (i=0;i<length;i++)buf[i]=0;
+	i=0;
+	Time_Out_Exit = MAX_TIME_OUT + millis();
+	while(CliStream->read()!=(-1));
+	while (i<length){		
+		while (CliStream->available() == 0){
+			UpDate();
+			if (Time_Out_Exit<millis()) GO_TO_EXIT;
+		}
+		CliStream->readBytes(&buf[i], 1);
+		DEBUG(buf[i]);
+		if (buf[i] == 0x0D || buf[i] == 0x0A) {buf[i]=0;break;}
+		else i++;
+	}
+	if (i<length) return i;
+	else return -1;
+}
+int ObjCLI::ReadIP (char *str, byte *b){
+	unsigned int addr=0;
+	char tmp[4];
+	int i=0, count=0;
+	DEBUG("\nRS: ");
+	while (1){
+		while (str[addr]!='.'&&str[addr]!=0){
+			DEBUG(str[addr]);
+			if (str[addr]>='0'&&str[addr]<='9')tmp[i++]=str[addr++];
+			else return -1;
+			if (i>3) return -1;
+		}
+		if (str[addr]==0&&count<3) return -1;
+		if (str[addr]=='.')str[addr]=0;
+		b[count++] = atoi(&str[addr-i]);
+		if (count==4) return addr;
+		addr++;
+		i=0;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+

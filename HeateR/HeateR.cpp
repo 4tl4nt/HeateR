@@ -596,8 +596,8 @@ void SaveListToEEPROM()
 	DEBUG(count);
 	DEBUG(" rooms.\nSaveListToEEPROM is done.\n");
 }
-void ReadNetworkSetingsEEPROM(NetworkSetings *p){
-	/*if (EEPROM.read(START_ADD_CONF_IP)==0)*/{
+void ReadNetworkSettingsEEPROM(NetworkSettings *p){
+	if (EEPROM.read(START_ADD_CONF_IP)==0){
 		for (int i=0;i<4;i++)
 		{
 			p->ip[i] = DEFAULT_IP[i];
@@ -616,3 +616,28 @@ void ReadNetworkSetingsEEPROM(NetworkSetings *p){
 	}
 	for (int i=0;i<6;i++)p->mac[i] = EEPROM.read(START_ADD_CONF_MAC+i);
 }
+void WriteNetworkSettingsEEPROM(NetworkSettings *p){
+	for (int i=0;i<4;i++){
+		EEPROM.write(START_ADD_CONF_IP+i,p->ip[i]);
+		EEPROM.write(START_ADD_CONF_MASK+i,p->mask[i]);
+		EEPROM.write(START_ADD_CONF_GATEWAY+i,p->gateway[i]);
+		EEPROM.write(START_ADD_CONF_DNS+i,p->dns[i]);
+	}
+	for (int i=0;i<6;i++)EEPROM.write(START_ADD_CONF_MAC+i,p->mac[i]);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

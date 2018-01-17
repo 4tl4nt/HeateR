@@ -53,6 +53,9 @@ public:
 	void RemoveRoomFromCLI();
 	void ControlRoomCLI();
 	void ClimateControl(Room_c *p);
+	void PrintMainSettings();
+	int ReadString (char *buf, unsigned int length);
+	int ReadIP (char *str, byte *b);
 };
 void UpDate ();
 #endif

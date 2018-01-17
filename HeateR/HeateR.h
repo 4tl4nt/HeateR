@@ -46,9 +46,9 @@ typedef struct{
     byte mask[4];
 	byte gateway[4];
 	byte dns[4];
-} NetworkSetings;
+} NetworkSettings;
 const byte DEFAULT_MAC[] = { 0x00, 0xFD, 0xBF, 0xFF, 0xEE, 0xEF };
-const byte DEFAULT_IP[] = {192,168,1,99};
+const byte DEFAULT_IP[] = {192,168,1,100};
 const byte DEFAULT_MASK[] = {255,255,255,0};
 const byte DEFAULT_GATEWAY[] = {192,168,1,1};
 const byte DEFAULT_DNS[] = {8,8,8,8};
@@ -190,7 +190,8 @@ void addNewRoom(Room_c* room);
 void DeleteRoom(int room);
 void RestoryListFromEEPROM();
 void SaveListToEEPROM();
-void ReadNetworkSetingsEEPROM(NetworkSetings *p);
+void ReadNetworkSettingsEEPROM(NetworkSettings *p);
+void WriteNetworkSettingsEEPROM(NetworkSettings *p);
 
 #include <CLI.heater.h>
 #endif

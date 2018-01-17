@@ -16,8 +16,8 @@ EthernetUDP Udp;
 ntp_c *ntp;
 #endif
 void InitEthernet(){
-	NetworkSetings *p = new NetworkSetings;
-	ReadNetworkSetingsEEPROM(p);
+	NetworkSettings *p = new NetworkSettings;
+	ReadNetworkSettingsEEPROM(p);
     Serial.print("IP:");
     Serial.print((int)p->ip[0]);
     Serial.print(".");
@@ -92,6 +92,7 @@ void CommAPI(EthernetClient client){
 	else client.print("ERROR;");
     while(client.read()!=(-1));
   Serial.println("listen...");
+  //client.stop();
   }
 }
 
