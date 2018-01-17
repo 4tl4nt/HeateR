@@ -29,6 +29,15 @@ extern EthernetClient clientAPI, clientCLI;
 
 void InitEthernet();
 void CommAPI(EthernetClient client);
+void UpdateSocketTimer(){
+	
+}
+
+class ListEthernetClient_c {
+public:
+	ListEthernetClient_c* next_p;
+	unsigned long TimeToClose;
+};
 
 class EthernetClient_list {
 public:

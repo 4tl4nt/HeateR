@@ -92,7 +92,6 @@ void CommAPI(EthernetClient client){
 	else client.print("ERROR;");
     while(client.read()!=(-1));
   Serial.println("listen...");
-  //client.stop();
   }
 }
 
