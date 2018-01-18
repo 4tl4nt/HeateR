@@ -10,33 +10,64 @@
 
 PCF8574 pcf8574port1;//Обьект1 управлене микросхемой расширения GPIO, PCF8574
 PCF8574 pcf8574port2;//Обьект2 управлене микросхемой расширения GPIO, PCF8574
+PCF8574 pcf8574port3;//Обьект3 управлене микросхемой расширения GPIO, PCF8574
 ListRoom_c ListRoom_c::FirstRoom; // Первая комната в списке комнат
 /*
  *   Функция для конфигурации микросхемы PCF8574
  */
 void InitRelayModule()
 {
+#if TEST_MODE==1
+	  for (int i=2;i<5;i++)
+	  {
+		pinMode(i,OUTPUT);
+		digitalWrite(i,LOW);
+	  }
+#endif
+#ifdef ADDR_1
   pcf8574port1.begin(ADDR_1);
+#endif
+#ifdef ADDR_2
   pcf8574port2.begin(ADDR_2);
+#endif
+#ifdef ADDR_3
+  pcf8574port3.begin(ADDR_3);
+#endif
   
   for (int i=0;i<8;i++)
   {
+#ifdef ADDR_1
   pcf8574port1.digitalWrite(i, HIGH);
+#endif
+#ifdef ADDR_2
   pcf8574port2.digitalWrite(i, HIGH);
+#endif
+#ifdef ADDR_3
+  pcf8574port3.digitalWrite(i, HIGH);
+#endif
   }
   
   for (int i=0;i<8;i++)
   {
+#ifdef ADDR_1
   pcf8574port1.pinMode(i, OUTPUT);
+#endif
+#ifdef ADDR_2
   pcf8574port2.pinMode(i, OUTPUT);
+#endif
+#ifdef ADDR_3
+  pcf8574port3.pinMode(i, OUTPUT);
+#endif
   }
-  
   Serial.println("Inited relay module.");
 }
 
 void InitHeateR(){
 	digitalWrite(RESET_PIN,HIGH);
 	pinMode(RESET_PIN,OUTPUT);
+	pinMode(RESET_BUTTON_PIN,INPUT_PULLUP);
+	delay(1);
+	if (digitalRead(RESET_BUTTON_PIN)==LOW) HeaterReBoot(ResetMode);
 	RestoryListFromEEPROM();
 }
 
@@ -46,7 +77,10 @@ void HeaterReBoot(restartMode mode)
 		digitalWrite(RESET_PIN, LOW);
 	}
 	else if (mode==ResetMode){
-		EEPROM.write(5, 0);
+		for (int i=0;i<START_ADD_CONF_ROOMS;i++){
+			EEPROM.write(i, 0);
+			delay(1);
+		}
 		digitalWrite(RESET_PIN, LOW);
 	}
 }
@@ -126,34 +160,38 @@ Rele_c::Rele_c(int relePin)
 	ResetRele();
 }
 
-void Rele_c::SetRele()
+void Rele_c::SetRele(bool State)
 {
   int tmp = PinNumber-1;
-  if (tmp<8) pcf8574port1.digitalWrite(tmp, LOW);
-  else if (tmp<16) pcf8574port2.digitalWrite(tmp-8, LOW);
+#if TEST_MODE==1
+	digitalWrite((PinNumber%3)+2,State);
+  }
   else
+#endif
+#ifdef ADDR_1
+  if (tmp<8) pcf8574port1.digitalWrite(tmp, State);
+  else
+#endif
+#ifdef ADDR_2 
+	  if (tmp<16) pcf8574port2.digitalWrite(tmp-8, State);
+  else 
+#endif
+#ifdef ADDR_3
+      if (tmp<24) pcf8574port3.digitalWrite(tmp-16, State);
+  else
+#endif
   {
     DEBUG("In function SetRalay is an incorrect PinNumber = ");
     DEBUG(tmp);
 	DEBUG(".\n");
 	return;
   }
-  CurrentState=1;
+  CurrentState=!State;
 }
 
 void Rele_c::ResetRele()
 {
-  int tmp = PinNumber-1;
-  if (tmp<8) pcf8574port1.digitalWrite(tmp, HIGH);
-  else if (tmp<16) pcf8574port2.digitalWrite(tmp-8, HIGH);
-  else
-  {
-    DEBUG("In function ResetRalay is an incorrect PinNumber = ");
-    DEBUG(tmp);
-	DEBUG(".\n");
-	return;
-  }
-  CurrentState=0;
+	SetRele(1);
 }
 /*
  *
@@ -171,6 +209,7 @@ Room_c::Room_c(int room, int relePin, int wireInt, uint8_t* wireAdd)
 	MinTemp = MINIMAL_TEMPERATURE;
 	TimeOutCT = 0;
 	EnableControlTemp=false;
+	EnableMinTemp=false;
 	DEBUG("Created new room. Number of room is ");
 	DEBUG(RoomNumber);
 	DEBUG(".\n");
@@ -206,15 +245,17 @@ void Room_c::Update(){
 	else{
 		if (temp<MINIMAL_TEMPERATURE && !GetStateRele()) {
 			SetRele();
+			EnableMinTemp=true;
 			DEBUG("Автовключение системы обогрева №");
 			DEBUG(RoomNumber);
 			DEBUG("\n");
 		}
-		if (temp>MAXIMAL_TEMPERATURE && GetStateRele()) {
+		if ((temp>MAXIMAL_TEMPERATURE && GetStateRele()) || ((temp>(MINIMAL_TEMPERATURE+1)) && EnableMinTemp && GetStateRele())){
 			ResetRele();
 			DEBUG("Автовыключение системы обогрева №");
 			DEBUG(RoomNumber);
 			DEBUG("\n");
+			EnableMinTemp=false;
 		}
 	}
 }
@@ -231,11 +272,12 @@ void Room_c::SetTimeOutCT(unsigned long i){
 		return;
 		DEBUG("return\n");
 	}
+	i *= 1000;
 	unsigned long CurrentTime = millis();
 	if ((0xFFFFFFFF-CurrentTime)<i)
 		TimeOutCT = i-(0xFFFFFFFF-CurrentTime);
 	else 
-		TimeOutCT = CurrentTime + i*1000;
+		TimeOutCT = CurrentTime + i;
 	
 	SetControlTemp(true);
 }
@@ -280,16 +322,15 @@ void Room_c::SetControlTemp(double temp){
 }
 /*
  *
- *
+ */
 void Room_c::SetControlTemp(bool state){
 	EnableControlTemp=state;
 	if (!state){
-		MaxTemp = MINIMAL_TEMPERATURE+1;
-		MinTemp = MINIMAL_TEMPERATURE;
+		TimeOutCT = 0;
 		ResetRele();
 	}
 }
- *
+/*
  *
  */
  void UpdataNextOne(){
@@ -439,6 +480,13 @@ void DeleteRoom(int room){
 		p=p->next_p;
 	}
 }
+/*
+ *
+ */
+/**-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* EEPROM *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
+/*
+ *
+ */
 double RDFromEEPROM(int &addr){//RestoryDoubleFromEEPROM
 	double tmp = EEPROM.read(addr++);
 	delay(4);
@@ -449,8 +497,10 @@ double RDFromEEPROM(int &addr){//RestoryDoubleFromEEPROM
 }
 void RestoryListFromEEPROM()
 {
-	if (EEPROM.read(0) != VERSION_HEATER) return;
-	int addres=6, count = EEPROM.read(5);
+	DEBUG("RestoryListFromEEPROM(1)\n");
+	if (EEPROM.read(ADD_VERSION) != VERSION_HEATER) return;
+	int addres=START_ADD_CONF_ROOMS, count = EEPROM.read(ADD_COUNT_SAVE_LIST);
+	DEBUG("RestoryListFromEEPROM(2)\n");
 	ListRoom_c *p = &ListRoom_c::FirstRoom;
 	if (p->room_p!=NULL) return;
 	int room, relePin, wireInt;
@@ -470,11 +520,7 @@ void RestoryListFromEEPROM()
 		}
 		DEBUG("\n");
 		p->room_p = new Room_c(room, relePin, wireInt, wireAdd);
-		DEBUG("Read CurrentState\n");
-		p->room_p->CurrentState = EEPROM.read(addres++);
-		delay(4);
-		if (p->room_p->CurrentState)p->room_p->SetRele();
-		else p->room_p->ResetRele();
+		p->room_p->ResetRele();
 		
 		DEBUG("Read CalibrationTemperature: ");
 		tmp = RDFromEEPROM(addres);
@@ -488,7 +534,7 @@ void RestoryListFromEEPROM()
 		DEBUG(tmp2);
 		DEBUG("\n");
 		p->room_p->SetControlTemp(tmp, tmp2);
-		p->room_p->SetControlTemp((bool)(EEPROM.read(addres++)));
+		p->room_p->SetControlTemp(false);
 		p->next_p = new ListRoom_c;
 		DEBUG("\n---------------------------\n");
 		p=p->next_p;
@@ -505,8 +551,8 @@ void SDToEEPROM(int &addr, double num){//SaveDoubleToEEPROM
 }
 void SaveListToEEPROM()
 {
-	int addres=6, count = 0;
-	EEPROM.write(0, VERSION_HEATER);
+	int addres=START_ADD_CONF_ROOMS, count = 0;
+	EEPROM.write(ADD_VERSION, VERSION_HEATER);
 	delay(4);
 	ListRoom_c *p = &ListRoom_c::FirstRoom;
 	double DoubleNum;
@@ -525,8 +571,6 @@ void SaveListToEEPROM()
 			DEBUG(p->room_p->OneWireAddresse[i], HEX);
 			DEBUG(":");
 		}
-		delay(4);DEBUG("\nWrite CurrentState");
-		EEPROM.write(addres++, p->room_p->CurrentState);
 		delay(4);
 		
 		DoubleNum = p->room_p->GetCalibration();
@@ -544,8 +588,6 @@ void SaveListToEEPROM()
 		SDToEEPROM(addres, DoubleNum);
 		DEBUG(DoubleNum);
 		delay(4);
-		DEBUG("\nWrite State Climate Control\n");
-		EEPROM.write(addres++, p->room_p->GetControlTemp());
 		DEBUG("Wroten ");
 		DEBUG(addres);
 		DEBUG(" bytes");
@@ -553,10 +595,76 @@ void SaveListToEEPROM()
 		DEBUG("\n---------------------------\n");
 		p=p->next_p;
 	}
-	EEPROM.write(5, count);
+	EEPROM.write(ADD_COUNT_SAVE_LIST, count);
 	delay(4);
 	DEBUG("Wroten ");
 	
 	DEBUG(count);
 	DEBUG(" rooms.\nSaveListToEEPROM is done.\n");
 }
+void ReadNetworkSettingsEEPROM(NetworkSettings *p){
+	if (EEPROM.read(START_ADD_CONF_IP)==0){
+		for (int i=0;i<4;i++)
+		{
+			p->ip[i] = DEFAULT_IP[i];
+			p->mask[i] = DEFAULT_MASK[i];
+			p->gateway[i] = DEFAULT_GATEWAY[i];
+			p->dns[i] = DEFAULT_DNS[i];
+		}
+		for (int i=0;i<6;i++)p->mac[i] = DEFAULT_MAC[i];
+		return;
+	}
+	for (int i=0;i<4;i++){
+		p->ip[i] = EEPROM.read(START_ADD_CONF_IP+i);
+		p->mask[i] = EEPROM.read(START_ADD_CONF_MASK+i);
+		p->gateway[i] = EEPROM.read(START_ADD_CONF_GATEWAY+i);
+		p->dns[i] = EEPROM.read(START_ADD_CONF_DNS+i);
+	}
+	for (int i=0;i<6;i++)p->mac[i] = EEPROM.read(START_ADD_CONF_MAC+i);
+}
+void WriteNetworkSettingsEEPROM(NetworkSettings *p){
+	for (int i=0;i<4;i++){
+		EEPROM.write(START_ADD_CONF_IP+i,p->ip[i]);
+		EEPROM.write(START_ADD_CONF_MASK+i,p->mask[i]);
+		EEPROM.write(START_ADD_CONF_GATEWAY+i,p->gateway[i]);
+		EEPROM.write(START_ADD_CONF_DNS+i,p->dns[i]);
+	}
+	for (int i=0;i<6;i++)EEPROM.write(START_ADD_CONF_MAC+i,p->mac[i]);
+}
+void GetUserName(char *user, char *pass){
+	int i;
+	for (i=0; i<LENGH_USERNAME;i++){
+		user[i]=EEPROM.read(START_ADD_CONF_USERNAME+i);
+	}
+	for (i=0; i<LENGH_PASSWORD;i++){
+		pass[i]=EEPROM.read(START_ADD_CONF_PASSWORD+i);
+	}
+}
+void SaveUserName(char *user, char *pass){
+	int i;
+	for (i=0; i<LENGH_USERNAME;i++){
+		EEPROM.write(START_ADD_CONF_USERNAME+i,user[i]);
+		if (user[i]==0)break;
+	}
+	for (; i<LENGH_USERNAME;i++)EEPROM.write(START_ADD_CONF_USERNAME+i,0);
+	for (i=0; i<LENGH_PASSWORD;i++){
+		EEPROM.write(START_ADD_CONF_PASSWORD+i,pass[i]);
+		if (pass[i]==0)break;
+	}
+	for (; i<LENGH_PASSWORD;i++)EEPROM.write(START_ADD_CONF_PASSWORD+i,0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

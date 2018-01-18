@@ -2,12 +2,6 @@
 
 char timeServer[] = "ntp.time.in.ua";
 byte timeServerIP[] = {62,149,0,30};
-
-byte m_mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEF };
-byte m_ip[] = {10,4,11,250};
-byte m_mask[] = {255,255,255,0};
-byte m_gateway[] = {10,4,11,254};
-byte m_dns[] = {8,8,8,8};
 unsigned int portAPI = 12345;
 unsigned int portCLI = 12346;
 
@@ -22,9 +16,20 @@ EthernetUDP Udp;
 ntp_c *ntp;
 #endif
 void InitEthernet(){
-	Ethernet.begin(m_mac, m_ip, m_dns, m_gateway, m_mask);
+	NetworkSettings *p = new NetworkSettings;
+	ReadNetworkSettingsEEPROM(p);
+    Serial.print("IP:");
+    Serial.print((int)p->ip[0]);
+    Serial.print(".");
+    Serial.print((int)p->ip[1]);
+    Serial.print(".");
+    Serial.print((int)p->ip[2]);
+    Serial.print(".");
+    Serial.println(p->ip[3]);
+	Ethernet.begin(p->mac, p->ip, p->dns, p->gateway, p->mask);
 	serverCLIoverTCP.begin();
 	serverAPI.begin();
+	delete p;
 #if USE_NTP
 	ntp = new ntp_c;
 	Udp.begin(ntp->localPort);
@@ -34,19 +39,18 @@ void InitEthernet(){
 void CommAPI(EthernetClient client){
   if (client) 
   {
+	NewClientEthernet(client.getSocketNumber());
 	int num_room=0, state=0;
     Serial.println("connectAPI");
 	int i=0;
+    Serial.print("read: ");
     for(;i<SIZE_LOOP_BUF;i++)
     {
-      Serial.print("read ");
       buff[i]=client.read();
-      Serial.println(buff[i]);
-      if (buff[i]==';') break;
+      if (buff[i]==';'||buff[i]==-1) break;
+      Serial.print(buff[i]);
     }
-	/*client.print("ECHO:");
-	client.write(buff, i+1);
-	client.print("\n");*/
+    Serial.println();
     buff[6]=buff[8]='\0';
     num_room = atoi(&buff[4]);
     state = atoi(&buff[7]);
@@ -62,6 +66,7 @@ void CommAPI(EthernetClient client){
           state = atoi(&buff[9]);
           room_p->SetTimeOutCT(state);
         }
+		else client.print("ERROR;");
       }
       else client.print("ERROR;");
     }
@@ -84,9 +89,66 @@ void CommAPI(EthernetClient client){
       }
       else client.print("ERROR;");
     }
+	else client.print("ERROR;");
     while(client.read()!=(-1));
   Serial.println("listen...");
+  //client.stop();
   }
+}
+
+EthernetClient_list FirstEthernetClient;
+EthernetClient_list::EthernetClient_list(){
+	next_p = NULL;
+	TimeToClose = 99;
+	socketNUM = MAX_SOCK_NUM;
+}
+void UpdateClientEthernet(){
+	static unsigned long Timer = 1000 + millis();
+	if (millis()>Timer){
+		EthernetClient_list *tmp_p, *p;
+		tmp_p = p = &FirstEthernetClient;
+		EthernetClient *Client;
+		while (p->next_p != NULL) {
+			if (p->TimeToClose>0) p->TimeToClose--;
+			else {
+				Client = new EthernetClient(p->socketNUM);
+				Client->stop();
+				if (p->next_p->next_p!=NULL){
+					p->socketNUM = p->next_p->socketNUM;
+					p->TimeToClose = p->next_p->TimeToClose;
+					tmp_p = p->next_p;
+					p->next_p = p->next_p->next_p;
+					delete tmp_p;
+				}
+				else {
+					delete p->next_p;
+					p->next_p = NULL;
+					p->TimeToClose = 99;
+					p->socketNUM = MAX_SOCK_NUM;
+				}
+				break;
+			}
+			tmp_p = p;
+			p = p->next_p;
+		}
+		Timer = 1000 + millis();
+	}
+}
+
+void NewClientEthernet(uint8_t Socket){
+	EthernetClient_list* p = &FirstEthernetClient;
+	while (p->next_p != NULL) {
+		if (p->socketNUM == Socket) {
+			p->TimeToClose = TIME_OUT_SOCKET;
+			return;
+		}
+		p = p->next_p;
+	}
+	if (p->next_p==NULL) {
+		p->next_p = new EthernetClient_list;
+	}
+	p->socketNUM = Socket;
+	p->TimeToClose = TIME_OUT_SOCKET;
 }
 
 #if USE_NTP

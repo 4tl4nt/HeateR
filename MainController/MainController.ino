@@ -12,6 +12,7 @@ void UpDate (){
   UpdataNextOne();
   clientAPI = serverAPI.available();
   CommAPI(clientAPI);
+  UpdateClientEthernet();
 }
 
 void setup() {
@@ -39,9 +40,10 @@ void loop() {
     Serial.println("connectCLI");
     if (SerialCLI==NULL) {
       SerialCLI= new ObjCLI(&clientCLI);
-      SerialCLI->InitMenu();
+      //SerialCLI->InitMenu();
     }
     SerialCLI->MainMenu();
+    clientCLI.stop();
     Serial.println("listen...");
   }
 }

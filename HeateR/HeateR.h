@@ -12,17 +12,50 @@
 #define INPUT_PULLUP 2
 #endif
 
-#define NUMBER_OF_SOCKETS 16
+#define NUMBER_OF_SOCKETS 24
 #define PCF8574_BASE_ADD  0x20
 #define LIST_MAX_ROOM 32 // Максимально количество комнат в списке ListRoom_c
 #define LIST_MAX_WIRE 31  // Максимально количество интерфейсов в списке ListOneWire_c
 #define RESOLUTION_SENSORS 10// Разрядность сенсоров
 #define DUBUGING_MODE // Закоментировать чтобы отключить вывод отладочной информации в терминал
-#define VERSION_HEATER 23 // Версия прошивки влияет на сохраненные настройки
+#define VERSION_HEATER 24 // Версия прошивки влияет на сохраненные настройки
 #define RESET_PIN 8 // пин который выведен на контакт ресет
+#define RESET_BUTTON_PIN 7 // пин кнопки сброса настроек, кнопку нужно зажимать во время старта
 #define TIMEOUT_GETTEMP 5000 // количество мелискунд для повторного запроса температуры
-#define MINIMAL_TEMPERATURE 14.00
+#define MINIMAL_TEMPERATURE 15.00
 #define MAXIMAL_TEMPERATURE 30.00
+
+
+#define ADD_VERSION 4
+#define ADD_COUNT_SAVE_LIST 5
+#define START_ADD_CONF_IP 6
+#define START_ADD_CONF_MASK 10
+#define START_ADD_CONF_GATEWAY 14
+#define START_ADD_CONF_DNS 18
+#define START_ADD_CONF_PORT_API 22
+#define START_ADD_CONF_PORT_CLI 24
+#define START_ADD_CONF_MAC 26
+#define LENGH_USERNAME 10
+#define LENGH_PASSWORD 10
+#define START_ADD_CONF_USERNAME 32
+#define START_ADD_CONF_PASSWORD LENGH_USERNAME+START_ADD_CONF_USERNAME
+#define START_ADD_CONF_ROOMS LENGH_PASSWORD+START_ADD_CONF_PASSWORD
+
+typedef struct{
+	byte mac[6];
+	byte ip[4];
+    byte mask[4];
+	byte gateway[4];
+	byte dns[4];
+} NetworkSettings;
+const byte DEFAULT_MAC[] = { 0x00, 0xFD, 0xBF, 0xFF, 0xEE, 0xEF };
+const byte DEFAULT_IP[] = {192,168,1,100};
+const byte DEFAULT_MASK[] = {255,255,255,0};
+const byte DEFAULT_GATEWAY[] = {192,168,1,1};
+const byte DEFAULT_DNS[] = {8,8,8,8};
+const unsigned int DEFAULT_portAPI = 12345;
+const unsigned int DEFAULT_portCLI = 12346;
+
 
 #define GETTIME() millis()
 
@@ -37,7 +70,7 @@
 #define ADDR_1  PCF8574_BASE_ADD|0
 #define ADDR_2  PCF8574_BASE_ADD|3
 #define ADDR_3  PCF8574_BASE_ADD|7
-#define ADDR_4  PCF8574_BASE_ADD|1
+#define TEST_MODE 0
 /*
  *
  */
@@ -87,7 +120,7 @@ public:
 	int PinNumber;
 	int CurrentState;
 	Rele_c(int relePin);
-	void SetRele();
+	void SetRele(bool State=0);
 	void ResetRele();
 	int GetStateRele(){return CurrentState;};
 };
@@ -103,10 +136,11 @@ class Room_c: public Sensor_c, public Rele_c{
 	double MinTemp;
 	double MaxTemp;
 	bool EnableControlTemp;
+	bool EnableMinTemp;
 public:
 	Room_c(int room, int relePin, int wireInt, uint8_t* wireAdd);
 	void Update();
-	void SetControlTemp(bool state){EnableControlTemp=state;if (!state) { ResetRele(); TimeOutCT = 0;}};
+	void SetControlTemp(bool state);
 	void SetControlTemp(double min, double max);
 	void SetControlTemp(double temp);
 	bool GetControlTemp(){return EnableControlTemp;};
@@ -157,6 +191,10 @@ void addNewRoom(Room_c* room);
 void DeleteRoom(int room);
 void RestoryListFromEEPROM();
 void SaveListToEEPROM();
+void ReadNetworkSettingsEEPROM(NetworkSettings *p);
+void WriteNetworkSettingsEEPROM(NetworkSettings *p);
+void GetUserName(char *user, char *pass);
+void SaveUserName(char *user, char *pass);
 
 #include <CLI.heater.h>
 #endif
