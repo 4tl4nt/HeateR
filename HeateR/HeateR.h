@@ -20,6 +20,7 @@
 #define DUBUGING_MODE // Закоментировать чтобы отключить вывод отладочной информации в терминал
 #define VERSION_HEATER 24 // Версия прошивки влияет на сохраненные настройки
 #define RESET_PIN 8 // пин который выведен на контакт ресет
+#define RESET_BUTTON_PIN 7 // пин кнопки сброса настроек, кнопку нужно зажимать во время старта
 #define TIMEOUT_GETTEMP 5000 // количество мелискунд для повторного запроса температуры
 #define MINIMAL_TEMPERATURE 15.00
 #define MAXIMAL_TEMPERATURE 30.00
@@ -66,10 +67,10 @@ const unsigned int DEFAULT_portCLI = 12346;
 
 /**-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*SOCKETS*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
 
-//#define ADDR_1  PCF8574_BASE_ADD|0
-//#define ADDR_2  PCF8574_BASE_ADD|7
-//#define ADDR_3  PCF8574_BASE_ADD|3
-#define TEST_MODE 1
+#define ADDR_1  PCF8574_BASE_ADD|0
+#define ADDR_2  PCF8574_BASE_ADD|7
+#define ADDR_3  PCF8574_BASE_ADD|3
+#define TEST_MODE 0
 /*
  *
  */

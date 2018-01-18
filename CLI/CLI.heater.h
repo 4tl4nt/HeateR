@@ -17,20 +17,16 @@
 Status_flag |= EXIT_STATUS;\
 break;\
 }
+#define CLEAR_DISPLAY 1
 
+//строки
+#define TOP_SIMBOL "\f\t\t"
 
-class item_c 
+template<typename T, size_t n>
+inline size_t arraySize(const T (&arr)[n])
 {
-public:
-	uint8_t numField; 
-	char* field_p;
-}; 
- 
-class menu_c: public item_c 
-{
-public:
-	void action_p(void* function);
-};
+    return n;
+}
 class ObjCLI
 {
 public:
@@ -42,16 +38,16 @@ public:
 	int printAllSensors(DallasTemperature* DallasTemperature_p);
 	int readNumCLI ();
 	double readDoubleCLI();
-	void InitMenu ();
-	void printMenu(menu_c* menu, int size);
+	//void InitMenu ();
+	void printMenu(char const **p, int size, bool clear = 0);
 	void MainMenu ();
 	void Menu_1_f();
 	Room_c* NewRoom();
 	void printAllRoom();
 	void printRoom(Room_c* tmp_p);
 	char WaitForAnyKey();
-	void RemoveRoomFromCLI();
-	void ControlRoomCLI();
+	void RemoveRoomFromCLI(int room = 99);
+	void Menu_1_1();
 	void ClimateControl(Room_c *p);
 	void PrintMainSettings();
 	int ReadString (char *buf, unsigned int length);

@@ -6,11 +6,11 @@
 #define DEBUG(str, a...)
 #endif
 
-#define NUMBER_ITEM_MAIN 8
-menu_c mainMenu[NUMBER_ITEM_MAIN+1];
-const char *MainItems[NUMBER_ITEM_MAIN+1]=
+const char INVALID_INPUT[] = "Не корректно...\n";
+
+const char *MainItems[]=
 {
-	"\f\n\t\tHeateR v 2.3",
+	"HeateR v 2.4",
 	"Управление аудиториями",
 	"Показать температуру в аудиториях",
 	"Показать включенные обогреватели",
@@ -18,13 +18,12 @@ const char *MainItems[NUMBER_ITEM_MAIN+1]=
 	"Сетевые настройки",
 	"Сброс настроек",
 	"Перезагрузить",
-	"Выход из меню"
+	"Выход"
 };
-#define NUMBER_ITEM_MENU_001 9
-menu_c Menu_1[NUMBER_ITEM_MENU_001+1];
-const char *Menu_1Items[NUMBER_ITEM_MENU_001+1]=
+
+const char *Menu_1Items[]=
 {
-	"Выберите действие:",
+	"Выберите действие(Enter - Обновить):",
 	"Управлять одной аудиторией",
 	"ВКЛ КК в аудитории",
 	"ВКЛ КК во всех аудиториях",
@@ -35,55 +34,68 @@ const char *Menu_1Items[NUMBER_ITEM_MENU_001+1]=
 	"Удалить Аудиторию",
 	"Выход в главное меню"
 };
-#define NUMBER_ITEM_MENU_011 3
-menu_c Menu_1_1[NUMBER_ITEM_MENU_011+1];
-char const *Menu_1_1Items[NUMBER_ITEM_MENU_011+1]=
+const char *Menu_5Items[]=
 {
-	Menu_1Items[0],
-	"Управление обогревателем",
-	"Калибровка датчика",
-	Menu_1Items[4],
+	" ",
+	"Настроить IP",
+	"Настроить MASK",
+	"Настроить GETAWEY",
+	"Настроить DNS",
+	"Настроить MAC",
+	"Изменить Логин и Пароль",
+	"Сохранить",
+	Menu_1Items[9]
+};
+char const *Menu_1_1Items[]=
+ {
+	 "Обогреватель(Enter - Обновить):",
+	 "ВКЛ",
+	 "ВЫКЛ",
+	 "Калибровать датчик",
+	 "Cброс калибровки датчика",
+	 "Настроить КК",
+	 Menu_1Items[4],
+	 Menu_1Items[8],
+	 "Выход из управления"
  };
-
+ char const *Reboot_Items[]=
+ {
+	"Вы точно хотите перезагрузить устройство?\nВсе не несохраненные настройки будут потеряны.\nПродолжить?",
+	"Нет",
+	"Да"
+ };
+ char const *Reset_Items[]=
+ {
+	 "Вы точно хотите сбросить настройки?",
+	 "Нет",
+	 "Да"
+ };
 ObjCLI::ObjCLI(Stream* s)
 {
 	CliStream=s;
 	Status_flag = 0;
 	DEBUG("New ObjCLI\n");
-}
+};
 
-void ObjCLI::InitMenu ()
+void ObjCLI::printMenu(char const **p, int size, bool clear)
 {
-	for (int i=0;i<=NUMBER_ITEM_MAIN;i++)
-	{
-		mainMenu[i].field_p = MainItems[i];
-		mainMenu[i].numField = i;
-	}
-	 for (int i=0;i<=NUMBER_ITEM_MENU_001;i++)
-	{
-		Menu_1[i].field_p = Menu_1Items[i];
-		Menu_1[i].numField = i;
-	}
-	 for (int i=0;i<=NUMBER_ITEM_MENU_011;i++)
-	{
-		Menu_1_1[i].field_p = Menu_1_1Items[i];
-		Menu_1_1[i].numField = i;
-	}
-}
- 
-void ObjCLI::printMenu(menu_c menu[],int size)
-{
-	printCLI(menu[0].field_p);
+	
+	if (clear) printCLI(TOP_SIMBOL);
+	printCLI((char*)(p[0]));
 	printCLI("\n");
-	for (int i=1;i<=size;i++)
-	{
-		printCLI(menu[i].numField);
+	int i;
+	for (i=1;i<size-1;i++){
+		printCLI(i);
 		printCLI(". ");
-		printCLI(menu[i].field_p);
+		printCLI((char*)(p[i]));
 		printCLI("\n");
 	}
-	//printCLI("Сделайте свой выбор: ");
+	printCLI(9);
+	printCLI(". ");
+	printCLI((char*)(p[i]));
+	printCLI("\n");
 }
+
 void ObjCLI::MainMenu (){
 	ListRoom_c* tmp;
 	Status_flag &= (~EXIT_STATUS);
@@ -101,7 +113,7 @@ void ObjCLI::MainMenu (){
 	}
 	while(1){
 		CHECK_FOR_EXIT; 
-		printMenu(mainMenu, NUMBER_ITEM_MAIN);
+		printMenu(MainItems, arraySize(MainItems), CLEAR_DISPLAY);
 		switch(readNumCLI()){
 		case 1:
 			Menu_1_f ();
@@ -117,7 +129,7 @@ void ObjCLI::MainMenu (){
 				printCLI("\n");
 				tmp = tmp->next_p;
 			}
-			if (WaitForAnyKey()=='c')ControlRoomCLI();
+			if (WaitForAnyKey()=='c')Menu_1_1();
 			break;
 		case 3://"Показать включенные обогреватели",
 			tmp = &ListRoom_c::FirstRoom;
@@ -131,7 +143,7 @@ void ObjCLI::MainMenu (){
 				printCLI("\n");
 				tmp = tmp->next_p;
 			}
-			if (WaitForAnyKey()=='c')ControlRoomCLI();
+			if (WaitForAnyKey()=='c')Menu_1_1();
 		break;
 		case 4://"Сохранить в постоянную память",
 			SaveListToEEPROM();
@@ -142,25 +154,26 @@ void ObjCLI::MainMenu (){
 			PrintMainSettings();
 		break;
 		case 6://"Сброс настрек",
-			printCLI("Вы точно хотите сбросить настройки?\n9. Да\n1. Нет\n");
+			printMenu(Reset_Items, arraySize(Reset_Items));
 			if (readNumCLI()==9) HeaterReBoot(ResetMode);
 		break;
 		case 7://"Перезагрузить",
-			printCLI("Вы точно хотите перезагрузить устройство?\nВсе не несохраненные настройки будут потеряны.\nПродолжить?\n9. Да\n1. Нет\n");
-			if (readNumCLI()==9) HeaterReBoot(ResetMode);
+			printMenu(Reboot_Items, arraySize(Reboot_Items));
+			if (readNumCLI()==9) HeaterReBoot(RebootMode);
 		break;
 		case 9:
 			while(CliStream->read()!=(-1));
 			return;//"Выход из меню"
 		break;
 		default:
+			printCLI(INVALID_INPUT);
 			printCLI("Используейте цифры 1-7\n");
+			WaitForAnyKey();
 		break;
 		}
 	}
 	return;//"Выход из меню"
 }
-//void getAllRoom(ptrFunc stream);
 void ObjCLI::Menu_1_f (){
 	int tmp;
 	ListRoom_c* list_p;
@@ -168,20 +181,20 @@ void ObjCLI::Menu_1_f (){
 	while (1)
 	{
 		CHECK_FOR_EXIT;//here is allow
-		printCLI("\f\n\t\tCписок аудиторий:\n");
+		printCLI(TOP_SIMBOL"Cписок аудиторий:\n");
 		printAllRoom();
-		printMenu(Menu_1, NUMBER_ITEM_MENU_001);
+		printMenu(Menu_1Items, arraySize(Menu_1Items));
 		switch(readNumCLI())
 		{
 		case 1:
-			ControlRoomCLI();
+			Menu_1_1();
 		break;
 		case 2:
 			printCLI("Укажите Аудиторию: ");
 			tmp = readDoubleCLI();
 			room_p = getRoom(tmp);
 			if (room_p==NULL) {
-				printCLI("Не корректно...\n");
+				printCLI(INVALID_INPUT);
 				WaitForAnyKey();
 			}
 			else room_p->SetControlTemp(true);
@@ -198,7 +211,7 @@ void ObjCLI::Menu_1_f (){
 			tmp = readDoubleCLI();
 			room_p = getRoom(tmp);
 			if (room_p==NULL) {
-				printCLI("Не корректно...");
+				printCLI(INVALID_INPUT);
 				WaitForAnyKey();
 			}
 			else room_p->SetControlTemp(false);
@@ -238,7 +251,7 @@ Room_c* ObjCLI::NewRoom(){
 	DeviceAddress a;
 	ListOneWire_c* ListOneWire_p=NULL;
 	while(true){
-		printCLI("\f\n\t\tДобавление новой аудитории.\nАудитория: ");
+		printCLI(TOP_SIMBOL"Добавление новой аудитории.\nАудитория: ");
 		r = readDoubleCLI();
 		CHECK_FOR_EXIT;
 		printCLI("Номер розетки: ");
@@ -275,7 +288,7 @@ Room_c* ObjCLI::NewRoom(){
 		CHECK_FOR_EXIT;
 		ListOneWire_p->DallasTemperature_p->getAddress(a, n);
 		if (ListOneWire_p->DallasTemperature_p->validAddress(a)) room = new Room_c(r,d,w,a);
-		else {printCLI("Упссс... Что-то произошло, комната не добавленна!"); return NULL;}
+		else {printCLI(INVALID_INPUT); WaitForAnyKey(); return NULL;}
 		printCLI("Готово!!!\n");
 		return room;
 	}
@@ -285,7 +298,7 @@ int ObjCLI::printAllSensors(DallasTemperature* DallasTemperature_p)
 {
 	DallasTemperature_p->begin();
 	int count = DallasTemperature_p->getDeviceCount();
-	printCLI("\f\n\t\tНайдено ");
+	printCLI(TOP_SIMBOL"Найдено ");
 	printCLI(count);
 	if ((count%100!=11)&&(count%10==1))printCLI(" датчик.\n");
 	else if (
@@ -392,22 +405,24 @@ char ObjCLI::WaitForAnyKey(){
 	return Buffer[0];
 }
 
-void ObjCLI::RemoveRoomFromCLI(){
-	int tmp, tmp_room;
+void ObjCLI::RemoveRoomFromCLI(int room){
+	int tmp;
 	while(1){
-		printCLI("\f\n\t\tУдаление Аудитории\n");
-		printAllRoom();
-		printCLI("Ведите номер аудитории(99. выход):");
-		tmp_room = readDoubleCLI();
-		CHECK_FOR_EXIT;
-		if (tmp_room==99)return;
-		if (getRoom(tmp_room)==NULL){
-			printCLI("Аудитории не существует.\n");
-			WaitForAnyKey();
-			continue;
+		if (room==99){
+			printCLI(TOP_SIMBOL"Удаление Аудитории\n");
+			printAllRoom();
+			printCLI("Ведите номер аудитории(99. выход):");
+			room = readDoubleCLI();
+			CHECK_FOR_EXIT;
+			if (room==99)return;
+			if (getRoom(room)==NULL){
+				printCLI(INVALID_INPUT);
+				WaitForAnyKey();
+				continue;
+			}
 		}
-		printCLI("Вы точно хотите ");
-		printCLI(tmp_room);
+		printCLI("Вы точно хотите удалить ");
+		printCLI(room);
 		printCLI("-ю аудиторию?\n1-ДА\n0-НЕТ\n");
 		tmp = readNumCLI();
 		CHECK_FOR_EXIT;
@@ -415,28 +430,33 @@ void ObjCLI::RemoveRoomFromCLI(){
 		printCLI("Точно точно???\n1-ДА\n0-НЕТ\n");
 		tmp = readNumCLI();
 		CHECK_FOR_EXIT;
-		//if (tmp==0) return;
-		DeleteRoom(tmp_room);
+		DeleteRoom(room);
 		return;
 	}
 }
-void ObjCLI::ControlRoomCLI()
+void ObjCLI::Menu_1_1()
 {
 	printCLI("Укажите № аудитории:");
 	Room_c *p = getRoom(readDoubleCLI());
 	double d_tmp;
-	if (p==NULL)return;
+	if (p==NULL){
+		printCLI(INVALID_INPUT);
+		WaitForAnyKey();
+		return;
+	}
 	while(1)
 	{
 		CHECK_FOR_EXIT;
 		printCLI("\f");
 		printRoom(p);
-		printCLI("\ВКЛ/ВЫКЛ обогреватель\n0-ВЫКЛ\n1-ВКЛ\n2. Обновить\n3. Калибровать датчик\n4. Cброс калибровки датчика\n5. Настроить КК\n6. Выключить КК\n7. Удалить аудиторию\n9. Выход из управления\n");
+		printMenu(Menu_1_1Items, arraySize(Menu_1_1Items));
 		printCLI("Сделайте свой выбор: ");
 		switch(readNumCLI()){
-			case 0: p->ResetRele();
+			case 0:
 		break;
 			case 1: p->SetRele();
+		break;
+			case 2: p->ResetRele(); 
 		break;
 			case 3: 
 			printCLI("Укажите поправку температуры:");
@@ -456,7 +476,7 @@ void ObjCLI::ControlRoomCLI()
 			WaitForAnyKey();
 		break;
 			case 7: 
-			DeleteRoom(p->RoomNumber);
+			RemoveRoomFromCLI(p->RoomNumber);
 			return;
 		break;
 			case 9: return;
@@ -472,7 +492,7 @@ void ObjCLI::ClimateControl(Room_c *p){
 		double temp = readDoubleCLI();
 		CHECK_FOR_EXIT;
 		if (temp < MINIMAL_TEMPERATURE || temp > MAXIMAL_TEMPERATURE){
-			printCLI("Указана некорректно!\n");
+			printCLI(INVALID_INPUT);
 			WaitForAnyKey();
 			break;
 		}
@@ -489,7 +509,7 @@ void ObjCLI::PrintMainSettings() {
 	while(1)
 	{
 		CHECK_FOR_EXIT;
-		printCLI("\f\n\t\tNetwork Settings\n");
+		printCLI(TOP_SIMBOL"Network Settings\n");
 		printCLI("IP:\t ");
 		for (int i=0;i<4;i++){ printCLI(NetSets.ip[i]);if(i<3)printCLI('.');}
 		printCLI("\nMASK:\t ");
@@ -500,18 +520,8 @@ void ObjCLI::PrintMainSettings() {
 		for (int i=0;i<4;i++){ printCLI(NetSets.dns[i]);if(i<3)printCLI('.');}
 		printCLI("\nMAC:\t ");
 		for (int i=0;i<6;i++){ printCLI(NetSets.mac[i]);if(i<5)printCLI(':');}
-		printCLI("\nConfigured user name and password: ");
 		
-		printCLI("\n1. Настроить IP");
-		printCLI("\n2. Настроить MASK");
-		printCLI("\n3. Настроить GETAWEY");
-		printCLI("\n4. Настроить DNS");
-		printCLI("\n5. Настроить MAC");
-		printCLI("\n6. Настроить Логин и Пароль");
-		printCLI("\n7. Сохранить");
-		printCLI("\n9. Выход\n");
-		
-		
+		printMenu(Menu_5Items, arraySize(Menu_5Items));
 		switch(readNumCLI()){
 			case 1: 
 			printCLI("Введите IP: ");
@@ -570,12 +580,14 @@ void ObjCLI::PrintMainSettings() {
 			case 6: 
 			printCLI("\nЛогин: ");
 			if (ReadString(&Buffer[0], LENGH_USERNAME+1)==-1){
-				printCLI("Не верный ввод");
+				printCLI(INVALID_INPUT);
+				WaitForAnyKey();
 				break;
 			}
 			printCLI("\nПароль: ");
 			if (ReadString(&Buffer[LENGH_USERNAME+1], LENGH_PASSWORD+1)==-1){
-				printCLI("Не верный ввод");
+				printCLI(INVALID_INPUT);
+				WaitForAnyKey();
 				break;
 			}
 			SaveUserName(&Buffer[0],&Buffer[LENGH_USERNAME+1]);
@@ -597,7 +609,6 @@ void ObjCLI::PrintMainSettings() {
 	}
 }
 int ObjCLI::ReadString (char *buf, unsigned int length){
-	DEBUG("\nRI: ");
 	int i;
 	for (i=0;i<length;i++)buf[i]=0;
 	i=0;
@@ -620,7 +631,6 @@ int ObjCLI::ReadIP (char *str, byte *b){
 	unsigned int addr=0;
 	char tmp[4];
 	int i=0, count=0;
-	DEBUG("\nRS: ");
 	while (1){
 		while (str[addr]!='.'&&str[addr]!=0){
 			DEBUG(str[addr]);
@@ -636,15 +646,3 @@ int ObjCLI::ReadIP (char *str, byte *b){
 		i=0;
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-

@@ -17,13 +17,13 @@ ListRoom_c ListRoom_c::FirstRoom; // Первая комната в списке
  */
 void InitRelayModule()
 {
-  if (TEST_MODE){
+#if TEST_MODE==1
 	  for (int i=2;i<5;i++)
 	  {
 		pinMode(i,OUTPUT);
 		digitalWrite(i,LOW);
 	  }
-  }
+#endif
 #ifdef ADDR_1
   pcf8574port1.begin(ADDR_1);
 #endif
@@ -59,13 +59,15 @@ void InitRelayModule()
   pcf8574port3.pinMode(i, OUTPUT);
 #endif
   }
-  
   Serial.println("Inited relay module.");
 }
 
 void InitHeateR(){
 	digitalWrite(RESET_PIN,HIGH);
 	pinMode(RESET_PIN,OUTPUT);
+	pinMode(RESET_BUTTON_PIN,INPUT_PULLUP);
+	delay(1);
+	if (digitalRead(RESET_BUTTON_PIN)==LOW) HeaterReBoot(ResetMode);
 	RestoryListFromEEPROM();
 }
 
@@ -75,7 +77,10 @@ void HeaterReBoot(restartMode mode)
 		digitalWrite(RESET_PIN, LOW);
 	}
 	else if (mode==ResetMode){
-		EEPROM.write(5, 0);
+		for (int i=0;i<START_ADD_CONF_ROOMS;i++){
+			EEPROM.write(i, 0);
+			delay(1);
+		}
 		digitalWrite(RESET_PIN, LOW);
 	}
 }
@@ -158,10 +163,11 @@ Rele_c::Rele_c(int relePin)
 void Rele_c::SetRele(bool State)
 {
   int tmp = PinNumber-1;
-  if (TEST_MODE){
+#if TEST_MODE==1
 	digitalWrite((PinNumber%3)+2,State);
   }
   else
+#endif
 #ifdef ADDR_1
   if (tmp<8) pcf8574port1.digitalWrite(tmp, State);
   else

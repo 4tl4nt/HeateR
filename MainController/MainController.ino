@@ -40,7 +40,7 @@ void loop() {
     Serial.println("connectCLI");
     if (SerialCLI==NULL) {
       SerialCLI= new ObjCLI(&clientCLI);
-      SerialCLI->InitMenu();
+      //SerialCLI->InitMenu();
     }
     SerialCLI->MainMenu();
     clientCLI.stop();
