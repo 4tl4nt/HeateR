@@ -100,6 +100,7 @@ void ObjCLI::MainMenu (){
 	ListRoom_c* tmp;
 	Status_flag &= (~EXIT_STATUS);
 	while(1){
+		CHECK_FOR_EXIT; 
 		printCLI("\f");
 		printCLI("user:");
 		ReadString (&Buffer[0], LENGH_USERNAME+1);
