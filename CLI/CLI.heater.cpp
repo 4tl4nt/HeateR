@@ -51,6 +51,7 @@ char const *Menu_1_1Items[]=
 	 "Обогреватель(Enter - Обновить):",
 	 "ВКЛ",
 	 "ВЫКЛ",
+	 "ВКЛ KK на время",
 	 "Калибровать датчик",
 	 "Cброс калибровки датчика",
 	 "Настроить КК",
@@ -459,24 +460,28 @@ void ObjCLI::Menu_1_1()
 		break;
 			case 2: p->ResetRele(); 
 		break;
-			case 3: 
+			case 3:
+			printCLI("Укажите время (В часах, пример пол часа 0,5):");
+			p->SetTimeOutCT(readDoubleCLI()*3600);
+		break;
+			case 4: 
 			printCLI("Укажите поправку температуры:");
 			p->SetCalibration(readDoubleCLI());
 		break;
-			case 4: 
+			case 5: 
 			p->ResetCalibration();
 			printCLI("Выполнен сброс калибровки\n");
 			WaitForAnyKey();
 		break;
-			case 5: 
+			case 6: 
 			ClimateControl(p);
 		break;
-			case 6: 
+			case 7: 
 			p->SetControlTemp(false);
 			printCLI("КК отключен\n");
 			WaitForAnyKey();
 		break;
-			case 7: 
+			case 8: 
 			RemoveRoomFromCLI(p->RoomNumber);
 			return;
 		break;
