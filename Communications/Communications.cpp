@@ -112,7 +112,7 @@ void UpdateClientEthernet(){
 			if (p->TimeToClose>0) p->TimeToClose--;
 			else {
 				Client = new EthernetClient(p->socketNUM);
-				Client->stop();
+				if (Client->connected()) Client->stop();
 				if (p->next_p->next_p!=NULL){
 					p->socketNUM = p->next_p->socketNUM;
 					p->TimeToClose = p->next_p->TimeToClose;
@@ -126,6 +126,7 @@ void UpdateClientEthernet(){
 					p->TimeToClose = 99;
 					p->socketNUM = MAX_SOCK_NUM;
 				}
+				delete Client;
 				break;
 			}
 			tmp_p = p;

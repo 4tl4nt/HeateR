@@ -43,7 +43,7 @@ void loop() {
       //SerialCLI->InitMenu();
     }
     SerialCLI->MainMenu();
-    clientCLI.stop();
+    if (clientCLI.connected()) clientCLI.stop();
     Serial.println("listen...");
   }
 }
