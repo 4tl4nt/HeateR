@@ -25,7 +25,7 @@ void InitEthernet(){
     Serial.println(p->ip[3]);
 	Ethernet.begin(p->mac, p->ip, p->dns, p->gateway, p->mask);
 #if USE_WDT
-	wdt_enable(WDTO_8S);
+	wdt_enable(WDTO_4S);
 #endif
 #if USE_NTP
 	Udp.begin(localPortNTP);

@@ -1,5 +1,3 @@
-#define USE_NTP 1
-#define USE_WDT 1 
 #define SIZE_LOOP_BUF 30
 #define TIME_OUT_SOCKET 10
 

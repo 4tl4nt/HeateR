@@ -74,14 +74,22 @@ void InitHeateR(){
 void HeaterReBoot(restartMode mode)
 {
 	if (mode==RebootMode){
+#if USE_WDT
+		while(1);
+#else
 		digitalWrite(RESET_PIN, LOW);
+#endif
 	}
 	else if (mode==ResetMode){
 		for (int i=0;i<START_ADD_CONF_ROOMS;i++){
 			EEPROM.write(i, 0);
 			delay(1);
 		}
+#if USE_WDT
+		while(1);
+#else
 		digitalWrite(RESET_PIN, LOW);
+#endif
 	}
 }
 /**-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*class Sensor_c*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/

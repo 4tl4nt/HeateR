@@ -40,6 +40,12 @@
 #define START_ADD_CONF_USERNAME 32
 #define START_ADD_CONF_PASSWORD LENGH_USERNAME+START_ADD_CONF_USERNAME
 #define START_ADD_CONF_ROOMS LENGH_PASSWORD+START_ADD_CONF_PASSWORD
+#define USE_NTP 1
+#define USE_WDT 1 
+
+#if USE_WDT
+#include <avr/wdt.h>
+#endif
 
 typedef struct{
 	byte mac[6];
@@ -68,8 +74,8 @@ const unsigned int DEFAULT_portCLI = 12346;
 /**-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*SOCKETS*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
 
 #define ADDR_1  PCF8574_BASE_ADD|0
-//#define ADDR_2  PCF8574_BASE_ADD|7
-//#define ADDR_3  PCF8574_BASE_ADD|3
+#define ADDR_2  PCF8574_BASE_ADD|7
+#define ADDR_3  PCF8574_BASE_ADD|3
 #define TEST_MODE 0
 /*
  *
