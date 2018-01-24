@@ -1,7 +1,7 @@
 #include "Communications.h"
 
-char timeServer[] = "ntp.time.in.ua";
-byte timeServerIP[] = {62,149,0,30};
+//char timeServer[] = "ntp.time.in.ua";
+//byte timeServerIP[] = {62,149,0,30};
 unsigned int portAPI = 12345;
 unsigned int portCLI = 12346;
 
@@ -11,10 +11,7 @@ EthernetClient clientAPI, clientCLI;
 
 char buff[SIZE_LOOP_BUF];
 Room_c* room_p;
-EthernetUDP Udp;
-#if USE_NTP
-ntp_c *ntp;
-#endif
+
 void InitEthernet(){
 	NetworkSettings *p = new NetworkSettings;
 	ReadNetworkSettingsEEPROM(p);
@@ -27,13 +24,16 @@ void InitEthernet(){
     Serial.print(".");
     Serial.println(p->ip[3]);
 	Ethernet.begin(p->mac, p->ip, p->dns, p->gateway, p->mask);
+#if USE_WDT
+	wdt_enable(WDTO_8S);
+#endif
+#if USE_NTP
+	Udp.begin(localPortNTP);
+	GetTime();
+#endif
 	serverCLIoverTCP.begin();
 	serverAPI.begin();
 	delete p;
-#if USE_NTP
-	ntp = new ntp_c;
-	Udp.begin(ntp->localPort);
-#endif
 }
 
 void CommAPI(EthernetClient client){
@@ -93,6 +93,7 @@ void CommAPI(EthernetClient client){
     while(client.read()!=(-1));
   Serial.println("listen...");
   //client.stop();
+  GetTime();
   }
 }
 
@@ -103,11 +104,16 @@ EthernetClient_list::EthernetClient_list(){
 	socketNUM = MAX_SOCK_NUM;
 }
 void UpdateClientEthernet(){
-	static unsigned long Timer = 1000 + millis();
+	static unsigned long Timer = (millis()/1000+1)*1000;
 	if (millis()>Timer){
 		EthernetClient_list *tmp_p, *p;
 		tmp_p = p = &FirstEthernetClient;
 		EthernetClient *Client;
+		CurrentTime++;
+#if USE_WDT
+		wdt_reset();
+		if (CurrentTime>=RebootTime) while(1);
+#endif
 		while (p->next_p != NULL) {
 			if (p->TimeToClose>0) p->TimeToClose--;
 			else {
@@ -132,7 +138,7 @@ void UpdateClientEthernet(){
 			tmp_p = p;
 			p = p->next_p;
 		}
-		Timer = 1000 + millis();
+		Timer = (millis()/1000+1)*1000;
 	}
 }
 
@@ -153,18 +159,23 @@ void NewClientEthernet(uint8_t Socket){
 }
 
 #if USE_NTP
-ntp_c::ntp_c(){
-	timeOut = 0;
-	localPort = 8888;       // local port to listen for UDP packets
-}
-void ntp_c::getTime() {
-	
-  sendNTPpacket(timeServerIP); // send an NTP packet to a time server
+
+unsigned int localPortNTP = 8888;       // local port to listen for UDP packets
+char timeServer[] = "time.nist.gov"; // time.nist.gov NTP server
+const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
+byte packetBuffer[ NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
+EthernetUDP Udp;// A UDP instance to let us send and receive packets over UDP
+unsigned long CurrentTime, RebootTime;
+void GetTime() {
+																					Serial.println("GetTime start");
+  sendNTPpacket(timeServer); // send an NTP packet to a time server
+
+																					Serial.println("SendNTPpacket");
   // wait to see if a reply is available
   delay(1000);
-  // while (!Udp.available());
   if (Udp.parsePacket()) {
     // We've received a packet, read the data from it
+																					Serial.println("into if");
     Udp.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
 
     // the timestamp starts at byte 40 of the received packet and is four bytes,
@@ -183,7 +194,9 @@ void ntp_c::getTime() {
     // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
     const unsigned long seventyYears = 2208988800UL;
     // subtract seventy years:
-    unsigned long epoch = secsSince1900 - seventyYears;
+    unsigned long epoch = secsSince1900 - seventyYears + 7200;
+	CurrentTime = epoch;
+	RebootTime = ((epoch / 86400L)+1)*86400L;
     // print Unix time:
     Serial.println(epoch);
 
@@ -203,12 +216,28 @@ void ntp_c::getTime() {
       Serial.print('0');
     }
     Serial.println(epoch % 60); // print the second
+	
+	
+	//prin the reboot time
+	Serial.print("Reboot time is ");       // UTC is the time at Greenwich Meridian (GMT)
+    Serial.print((RebootTime  % 86400L) / 3600); // print the hour (86400 equals secs per day)
+    Serial.print(':');
+    if (((RebootTime % 3600) / 60) < 10) {
+      // In the first 10 minutes of each hour, we'll want a leading '0'
+      Serial.print('0');
+    }
+    Serial.print((RebootTime  % 3600) / 60); // print the minute (3600 equals secs per minute)
+    Serial.print(':');
+    if ((RebootTime % 60) < 10) {
+      // In the first 10 seconds of each minute, we'll want a leading '0'
+      Serial.print('0');
+    }
+    Serial.println(RebootTime % 60); // print the second
   }
-  // wait ten seconds before asking for the time again
-  // delay(10000);
-  // Ethernet.maintain();
 }
-void ntp_c::sendNTPpacket(char* address) {
+
+// send an NTP request to the time server at the given address
+void sendNTPpacket(char* address) {
   // set all bytes in the buffer to 0
   memset(packetBuffer, 0, NTP_PACKET_SIZE);
   // Initialize values needed to form NTP request
@@ -225,12 +254,9 @@ void ntp_c::sendNTPpacket(char* address) {
 
   // all NTP fields have been given values, now
   // you can send a packet requesting a timestamp:
-  Serial.println("...");
   Udp.beginPacket(address, 123); //NTP requests are to port 123
-  Serial.println("begin");
   Udp.write(packetBuffer, NTP_PACKET_SIZE);
-  Serial.println("write");
   Udp.endPacket();
-  Serial.println("end");
 }
+
 #endif

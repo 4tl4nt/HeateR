@@ -23,11 +23,6 @@ void setup() {
   InitHeateR();
   InitEthernet();
   Serial.println("MainController has started.");
-#if USE_NTP
-  Serial.println("Start ntp request...");
-  ntp->getTime();
-  Serial.println("End ntp request."); 
-#endif
   Serial.println("listen...");
 }
 
