@@ -2,8 +2,23 @@
 #define DUBUGING_MODE
 #ifdef DUBUGING_MODE
 #define DEBUG(str, a...){ Serial.print(str, ##a);}
+#define DEBUG_TIME(){\
+	Serial.print((CurrentTimeRTC  % 86400L) / 3600); \
+    Serial.print(':');\
+    if (((CurrentTimeRTC % 3600) / 60) < 10) {\
+      Serial.print('0');\
+    }\
+    Serial.print((CurrentTimeRTC  % 3600) / 60);\
+    Serial.print(':');\
+    if ((CurrentTimeRTC % 60) < 10) {\
+      Serial.print('0');\
+    }\
+	Serial.print(CurrentTimeRTC % 60); \
+	Serial.print("--"); \
+}
 #else
 #define DEBUG(str, a...)
+#define DEBUG_TIME()
 #endif
 
 const char INVALID_INPUT[] = "Не корректно...\n";
@@ -75,7 +90,7 @@ ObjCLI::ObjCLI(Stream* s)
 {
 	CliStream=s;
 	Status_flag = 0;
-	DEBUG("New ObjCLI\n");
+	DEBUG_TIME();DEBUG("New ObjCLI\n");
 };
 
 void ObjCLI::printMenu(char const **p, int size, bool clear)
@@ -108,10 +123,13 @@ void ObjCLI::MainMenu (){
 		printCLI("password:");
 		ReadString (&Buffer[LENGH_USERNAME+1], LENGH_PASSWORD+1);
 		GetUserName(&Buffer[LENGH_USERNAME+1+LENGH_PASSWORD+1],&Buffer[LENGH_USERNAME+1+LENGH_PASSWORD+1+LENGH_USERNAME+1]);
+		DEBUG_TIME();DEBUG("Попытка входа с логином ");DEBUG(&Buffer[0]); DEBUG(" и паролем ");DEBUG(&Buffer[LENGH_USERNAME+1]);
 		if (!strcmp(&Buffer[LENGH_USERNAME+1+LENGH_PASSWORD+1],&Buffer[0])&&!
 						strcmp(&Buffer[LENGH_USERNAME+1+LENGH_PASSWORD+1+LENGH_USERNAME+1],&Buffer[LENGH_USERNAME+1])){
 			break;
+			DEBUG(" принята.\n");
 		}
+		else DEBUG(" отклонена.\n");
 	}
 	while(1){
 		CHECK_FOR_EXIT; 
@@ -626,7 +644,6 @@ int ObjCLI::ReadString (char *buf, unsigned int length){
 			if (Time_Out_Exit<millis()) GO_TO_EXIT;
 		}
 		CliStream->readBytes(&buf[i], 1);
-		DEBUG(buf[i]);
 		if (buf[i] == 0x0D || buf[i] == 0x0A) {buf[i]=0;break;}
 		else i++;
 	}

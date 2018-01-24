@@ -46,7 +46,9 @@
 #if USE_WDT
 #include <avr/wdt.h>
 #endif
-
+#if USE_NTP
+extern unsigned long CurrentTimeRTC, RebootTime;
+#endif
 typedef struct{
 	byte mac[6];
 	byte ip[4];
@@ -74,8 +76,8 @@ const unsigned int DEFAULT_portCLI = 12346;
 /**-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*SOCKETS*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
 
 #define ADDR_1  PCF8574_BASE_ADD|0
-#define ADDR_2  PCF8574_BASE_ADD|7
-#define ADDR_3  PCF8574_BASE_ADD|3
+//#define ADDR_2  PCF8574_BASE_ADD|7
+//#define ADDR_3  PCF8574_BASE_ADD|3
 #define TEST_MODE 0
 /*
  *

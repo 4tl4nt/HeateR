@@ -1,9 +1,24 @@
 #include "HeateR.h"
 
 #ifdef DUBUGING_MODE
-#define DEBUG(str, a...){Serial.print(str, ##a);}
+#define DEBUG(str, a...){ Serial.print(str, ##a);}
+#define DEBUG_TIME(){\
+	Serial.print((CurrentTimeRTC  % 86400L) / 3600); \
+    Serial.print(':');\
+    if (((CurrentTimeRTC % 3600) / 60) < 10) {\
+      Serial.print('0');\
+    }\
+    Serial.print((CurrentTimeRTC  % 3600) / 60);\
+    Serial.print(':');\
+    if ((CurrentTimeRTC % 60) < 10) {\
+      Serial.print('0');\
+    }\
+	Serial.print(CurrentTimeRTC % 60); \
+	Serial.print("--"); \
+}
 #else
 #define DEBUG(str, a...)
+#define DEBUG_TIME()
 #endif
 
 /**-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*SOCKETS*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
@@ -107,12 +122,12 @@ Sensor_c::Sensor_c(int wireInt, uint8_t* wireAdd)
 	OneWireInterfacePin = wireInt;
 	for (int i=0; i<8;i++) OneWireAddresse[i]=wireAdd[i];
 
-	DEBUG("Found ");
+	DEBUG_TIME();DEBUG("Found ");
 	DEBUG(DallasTemperature_p->getDeviceCount(), DEC);
 	DEBUG(" sensor(s) on OneWire bus");
 	DEBUG(".\n");
 	DallasTemperature_p->setResolution(OneWireAddresse, RESOLUTION_SENSORS);
-	DEBUG("Resolution of sensor: ");
+	DEBUG_TIME();DEBUG("Resolution of sensor: ");
 	DEBUG(DallasTemperature_p->getResolution(OneWireAddresse), DEC);
 	DEBUG(".\n");
 
@@ -140,15 +155,15 @@ float Sensor_c::GetTemperature()
 		{
 			if (CountBadTemperature==MaxBadTemperature) {
 				return -127;
-				
-				Serial.print("Плохой замер температуры в группе портов №");
-				Serial.print(OneWireInterfacePin);
-				Serial.print("\nДатчик №");
+				DEBUG_TIME();
+				DEBUG("Плохой замер температуры в группе портов №");
+				DEBUG(OneWireInterfacePin);
+				DEBUG(". Датчик №");
 				for (int i=0;i<8;i++){
 					Serial.print(OneWireAddresse[i],HEX);
 					if (i<7)DEBUG(':');
 				}
-				Serial.print("\n");
+				DEBUG("\n");
 			}
 			else CountBadTemperature++;
 			
@@ -162,7 +177,7 @@ float Sensor_c::GetTemperature()
 Rele_c::Rele_c(int relePin)
 {
 	PinNumber=relePin;
-	DEBUG("Used rele. Pin of rele is ");
+	DEBUG_TIME();DEBUG("Used rele. Pin of rele is ");
 	DEBUG(PinNumber);
 	DEBUG(".\n");
 	ResetRele();
@@ -189,7 +204,7 @@ void Rele_c::SetRele(bool State)
   else
 #endif
   {
-    DEBUG("In function SetRalay is an incorrect PinNumber = ");
+    DEBUG_TIME();DEBUG("In function SetRalay is an incorrect PinNumber = ");
     DEBUG(tmp);
 	DEBUG(".\n");
 	return;
@@ -218,7 +233,7 @@ Room_c::Room_c(int room, int relePin, int wireInt, uint8_t* wireAdd)
 	TimeOutCT = 0;
 	EnableControlTemp=false;
 	EnableMinTemp=false;
-	DEBUG("Created new room. Number of room is ");
+	DEBUG_TIME();DEBUG("Created new room. Number of room is ");
 	DEBUG(RoomNumber);
 	DEBUG(".\n");
 }
@@ -238,13 +253,13 @@ void Room_c::Update(){
 	if (temp<(-27)) return;
 	if (EnableControlTemp){
 		if (temp<=MinTemp && !GetStateRele()) {
-			DEBUG("Климат контроль: обогреватель №");
+			DEBUG_TIME();DEBUG("Климат контроль: обогреватель №");
 			DEBUG(RoomNumber);
 			DEBUG(" ВКЛ\n");
 			SetRele();
 		}
 		if (temp>=MaxTemp && GetStateRele()) {
-			DEBUG("Климат контроль: обогреватель №");
+			DEBUG_TIME();DEBUG("Климат контроль: обогреватель №");
 			DEBUG(RoomNumber);
 			DEBUG(" ВЫКЛ\n");
 			ResetRele();
@@ -254,13 +269,13 @@ void Room_c::Update(){
 		if (temp<MINIMAL_TEMPERATURE && !GetStateRele()) {
 			SetRele();
 			EnableMinTemp=true;
-			DEBUG("Автовключение системы обогрева №");
+			DEBUG_TIME();DEBUG("Автовключение системы обогрева №");
 			DEBUG(RoomNumber);
 			DEBUG("\n");
 		}
 		if ((temp>MAXIMAL_TEMPERATURE && GetStateRele()) || ((temp>(MINIMAL_TEMPERATURE+1)) && EnableMinTemp && GetStateRele())){
 			ResetRele();
-			DEBUG("Автовыключение системы обогрева №");
+			DEBUG_TIME();DEBUG("Автовыключение системы обогрева №");
 			DEBUG(RoomNumber);
 			DEBUG("\n");
 			EnableMinTemp=false;
@@ -271,14 +286,13 @@ void Room_c::Update(){
  *
  */
 void Room_c::SetTimeOutCT(unsigned long i){
-	DEBUG("SetTimeOutCT\n");
+	DEBUG_TIME();DEBUG("SetTimeOutCT. ");
 	DEBUG("i = ");
 	DEBUG(i);
 	DEBUG("\n");
 	if (i==0){
 		SetControlTemp(false);
 		return;
-		DEBUG("return\n");
 	}
 	i *= 1000;
 	unsigned long CurrentTime = millis();
@@ -378,14 +392,14 @@ ListOneWire_c* GetOneWire(int wireInt)
 	while (curentListOneWire->Pin != wireInt && curentListOneWire->next_p!=NULL) curentListOneWire = curentListOneWire->next_p;
 	if (curentListOneWire->OneWire_p!=NULL)
 	{
-		DEBUG("Used the created OneWire. Pin of OneWire is ");
+		DEBUG_TIME();DEBUG("Used the created OneWire. Pin of OneWire is ");
 		DEBUG(curentListOneWire->Pin);
 		DEBUG(".\n");
 		return curentListOneWire;
 	}
 	else
 	{
-		DEBUG("Created a new OneWire. Pin of OneWire is ");
+		DEBUG_TIME();DEBUG("Created a new OneWire. Pin of OneWire is ");
 		DEBUG(wireInt);
 		DEBUG(".\n");
 		curentListOneWire->Pin=wireInt;
@@ -471,7 +485,6 @@ void DeleteRoom(int room){
 				tmp_p->next_p=p->next_p;
 				delete p->room_p;
 				delete p;
-				DEBUG("delete room\n");
 			} else { 
 				if (p->room_p== NULL) return;
 				delete p->room_p; 
@@ -480,7 +493,6 @@ void DeleteRoom(int room){
 				p->next_p = tmp_p->next_p;
 				p->room_p = tmp_p->room_p;
 				delete tmp_p;
-				DEBUG("not delete? room is first\n");
 			}
 			break;
 		}
@@ -505,10 +517,9 @@ double RDFromEEPROM(int &addr){//RestoryDoubleFromEEPROM
 }
 void RestoryListFromEEPROM()
 {
-	DEBUG("RestoryListFromEEPROM(1)\n");
+	DEBUG_TIME();DEBUG("RestoryListFromEEPROM\n");
 	if (EEPROM.read(ADD_VERSION) != VERSION_HEATER) return;
 	int addres=START_ADD_CONF_ROOMS, count = EEPROM.read(ADD_COUNT_SAVE_LIST);
-	DEBUG("RestoryListFromEEPROM(2)\n");
 	ListRoom_c *p = &ListRoom_c::FirstRoom;
 	if (p->room_p!=NULL) return;
 	int room, relePin, wireInt;
@@ -520,7 +531,7 @@ void RestoryListFromEEPROM()
 		relePin = EEPROM.read(addres++);
 		wireInt = EEPROM.read(addres++);
 		
-		DEBUG("Read addres ");
+		DEBUG_TIME();DEBUG("Read addres ");
 		for(int i=0; i<8; i++){
 		wireAdd[i] = EEPROM.read(addres++);
 		DEBUG(wireAdd[i], HEX);
@@ -530,21 +541,23 @@ void RestoryListFromEEPROM()
 		p->room_p = new Room_c(room, relePin, wireInt, wireAdd);
 		p->room_p->ResetRele();
 		
-		DEBUG("Read CalibrationTemperature: ");
+		DEBUG_TIME();DEBUG("Read CalibrationTemperature: ");
 		tmp = RDFromEEPROM(addres);
 		p->room_p->SetCalibration(tmp);
 		DEBUG(tmp);
-		DEBUG("\nRead Minimal Temperature: ");
+		DEBUG("\n")
+		DEBUG_TIME();DEBUG("Read Minimal Temperature: ");
 		tmp = RDFromEEPROM(addres);
 		DEBUG(tmp);
-		DEBUG("\nRead Maximal Temperature: ");
+		DEBUG("\n")
+		DEBUG_TIME();DEBUG("Read Maximal Temperature: ");
 		tmp2 = RDFromEEPROM(addres);
 		DEBUG(tmp2);
 		DEBUG("\n");
 		p->room_p->SetControlTemp(tmp, tmp2);
 		p->room_p->SetControlTemp(false);
 		p->next_p = new ListRoom_c;
-		DEBUG("\n---------------------------\n");
+		DEBUG("---------------------------------\n");
 		p=p->next_p;
 	}
 }
@@ -559,6 +572,7 @@ void SDToEEPROM(int &addr, double num){//SaveDoubleToEEPROM
 }
 void SaveListToEEPROM()
 {
+	DEBUG_TIME();DEBUG("SaveListToEEPROM\n");
 	int addres=START_ADD_CONF_ROOMS, count = 0;
 	EEPROM.write(ADD_VERSION, VERSION_HEATER);
 	delay(4);
@@ -568,47 +582,43 @@ void SaveListToEEPROM()
 		count++;
 		
 		EEPROM.write(addres++, p->room_p->RoomNumber);
-		delay(4);DEBUG("Write RoomNumber\n");
+		delay(4);
 		EEPROM.write(addres++, p->room_p->PinNumber);
-		delay(4);DEBUG("Write PinNumber\n");
+		delay(4);
 		EEPROM.write(addres++, p->room_p->OneWireInterfacePin);
-		delay(4);DEBUG("Write OneWireInterfacePin\nWrite Add = ");
+		delay(4);
 		for(int i=0; i<8; i++){
 			EEPROM.write(addres++, p->room_p->OneWireAddresse[i]);
 			delay(4);
-			DEBUG(p->room_p->OneWireAddresse[i], HEX);
-			DEBUG(":");
 		}
 		delay(4);
 		
 		DoubleNum = p->room_p->GetCalibration();
-		DEBUG("\nWrite CalibrationTemperature: ");
 		SDToEEPROM(addres, DoubleNum);
 		DEBUG(DoubleNum);
 		delay(4);
 		DoubleNum = p->room_p->GetMinTemp();
-		DEBUG("\nWrite Minimal Temperature: ");
 		SDToEEPROM(addres, DoubleNum);
 		DEBUG(DoubleNum);
 		delay(4);
 		DoubleNum = p->room_p->GetMaxTemp();
-		DEBUG("\nWrite Maximal Temperature: ");
 		SDToEEPROM(addres, DoubleNum);
 		DEBUG(DoubleNum);
 		delay(4);
-		DEBUG("Wroten ");
-		DEBUG(addres);
-		DEBUG(" bytes");
+		DEBUG_TIME();DEBUG("Write room: ");
+		DEBUG(p->room_p->RoomNumber);
+		DEBUG("\n");
 		delay(4);
 		DEBUG("\n---------------------------\n");
 		p=p->next_p;
 	}
 	EEPROM.write(ADD_COUNT_SAVE_LIST, count);
 	delay(4);
-	DEBUG("Wroten ");
+	DEBUG_TIME();DEBUG("Wroten ");
 	
 	DEBUG(count);
-	DEBUG(" rooms.\nSaveListToEEPROM is done.\n");
+	DEBUG(" rooms.\n");
+	DEBUG_TIME();DEBUG("SaveListToEEPROM is done.\n");
 }
 void ReadNetworkSettingsEEPROM(NetworkSettings *p){
 	if (EEPROM.read(START_ADD_CONF_IP)==0){

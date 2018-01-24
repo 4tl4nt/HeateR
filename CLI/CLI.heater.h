@@ -19,8 +19,11 @@ break;\
 }
 #define CLEAR_DISPLAY 1
 
-//строки
 #define TOP_SIMBOL "\f\t\t"
+
+#if USE_NTP
+extern unsigned long CurrentTimeRTC, RebootTime;
+#endif
 
 template<typename T, size_t n>
 inline size_t arraySize(const T (&arr)[n])

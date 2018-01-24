@@ -72,7 +72,8 @@ extern byte packetBuffer[]; //buffer to hold incoming and outgoing packets
 
 // A UDP instance to let us send and receive packets over UDP
 extern EthernetUDP Udp;
-extern unsigned long CurrentTime, RebootTime;
+
+extern unsigned long CurrentTimeRTC, RebootTime;
 
 void GetTime();
 void sendNTPpacket(char* address);
