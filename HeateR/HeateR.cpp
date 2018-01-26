@@ -27,6 +27,9 @@ PCF8574 pcf8574port1;//Обьект1 управлене микросхемой �
 PCF8574 pcf8574port2;//Обьект2 управлене микросхемой расширения GPIO, PCF8574
 PCF8574 pcf8574port3;//Обьект3 управлене микросхемой расширения GPIO, PCF8574
 ListRoom_c ListRoom_c::FirstRoom; // Первая комната в списке комнат
+#if USE_NTP
+unsigned long CurrentTimeRTC=0, RebootTime=0;
+#endif
 /*
  *   Функция для конфигурации микросхемы PCF8574
  */
@@ -92,7 +95,7 @@ void HeaterReBoot(restartMode mode)
 #if USE_WDT
 		while(1);
 #else
-		digitalWrite(RESET_PIN, LOW);
+		DEBUG("Reboot unpossible. Please turn off manually or enable WDT");
 #endif
 	}
 	else if (mode==ResetMode){
@@ -103,7 +106,7 @@ void HeaterReBoot(restartMode mode)
 #if USE_WDT
 		while(1);
 #else
-		digitalWrite(RESET_PIN, LOW);
+		DEBUG("Reboot unpossible. Please turn off manually or enable WDT");
 #endif
 	}
 }

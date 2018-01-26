@@ -9,6 +9,10 @@
 
 ObjCLI *SerialCLI = NULL;
 void UpDate (){
+  
+#if USE_WDT
+  UpdateWDT (FLAG_4);
+#endif
   UpdataNextOne();
   clientAPI = serverAPI.available();
   CommAPI(clientAPI);

@@ -129,8 +129,7 @@ void UpdateClientEthernet(){
 		EthernetClient *Client;
 		CurrentTimeRTC++;
 #if USE_WDT
-		wdt_reset();
-		if (CurrentTimeRTC>=RebootTime) while(1);
+UpdateWDT (FLAG_1);
 #endif
 		while (p->next_p != NULL) {
 			if (p->TimeToClose>0) p->TimeToClose--;
@@ -176,6 +175,17 @@ void NewClientEthernet(uint8_t Socket){
 	p->TimeToClose = TIME_OUT_SOCKET;
 }
 
+#if USE_WDT
+void UpdateWDT (uint8_t i){
+	static uint8_t flags = 0;
+	flags |= i;
+	if (flags & (FLAG_1|FLAG_2|FLAG_3|FLAG_4)){
+		wdt_reset();
+		flags = 0;
+	}
+	if (CurrentTimeRTC>=RebootTime) while(1);
+}
+#endif
 #if USE_NTP
 
 unsigned int localPortNTP = 8888;       // local port to listen for UDP packets
@@ -183,78 +193,62 @@ char timeServer[] = "time.nist.gov"; // time.nist.gov NTP server
 const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
 byte packetBuffer[ NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
 EthernetUDP Udp;// A UDP instance to let us send and receive packets over UDP
-unsigned long CurrentTimeRTC=0, RebootTime=0;
 void GetTime() {
-																					DEBUG_TIME();DEBUG("GetTime.\n");
+	DEBUG_TIME();DEBUG("GetTime.\n");
 	sendNTPpacket(timeServer); // send an NTP packet to a time server
-
-																						DEBUG_TIME();DEBUG("SendNTPpacket");
-	// wait to see if a reply is available
-	delay(1000);
-	while (!(Udp.parsePacket()));
-  
-    // We've received a packet, read the data from it
+	DEBUG_TIME();DEBUG("SendNTPpacket\n");
+	delay(1000);// wait to see if a reply is available
+	while (!(Udp.parsePacket()));// We've received a packet, read the data from it
     Udp.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
-
     // the timestamp starts at byte 40 of the received packet and is four bytes,
     // or two words, long. First, extract the two words:
-
     unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
     unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
     // combine the four bytes (two words) into a long integer
     // this is NTP time (seconds since Jan 1 1900):
     unsigned long secsSince1900 = highWord << 16 | lowWord;
-																				DEBUG_TIME();DEBUG("Seconds since Jan 1 1900 = ");
-																				DEBUG(secsSince1900);
-																				DEBUG("\n");
-
+	DEBUG_TIME();DEBUG("Seconds since Jan 1 1900 = ");
+	DEBUG(secsSince1900);
+	DEBUG("\n");
     // now convert NTP time into everyday time:
-    DEBUG_TIME();DEBUG("Unix time = ");
-    // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
-    const unsigned long seventyYears = 2208988800UL;
-    // subtract seventy years:
+    DEBUG_TIME();DEBUG("Unix time = ");// Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
+    const unsigned long seventyYears = 2208988800UL; // subtract seventy years:
     unsigned long epoch = secsSince1900 - seventyYears + 7200;
 	CurrentTimeRTC = epoch;
 	RebootTime = ((epoch / 86400L)+1)*86400L;
-    // print Unix time:
-																				DEBUG(epoch);
-																				DEBUG("\n");
-
-
-    // print the hour, minute and second:
-    																			DEBUG_TIME();DEBUG("The UTC time is ");       // UTC is the time at Greenwich Meridian (GMT)
-    																			DEBUG((epoch  % 86400L) / 3600); // print the hour (86400 equals secs per day)
-    																			DEBUG(':');
+	DEBUG(epoch);
+	DEBUG("\n");
+	//prin the time
+	DEBUG_TIME();DEBUG("The UTC time is ");
+	DEBUG((epoch  % 86400L) / 3600);
+	DEBUG(':');
     if (((epoch % 3600) / 60) < 10) {
-      // In the first 10 minutes of each hour, we'll want a leading '0'
-																				DEBUG('0');
+		DEBUG('0');
     }
-    																			DEBUG((epoch  % 3600) / 60); // print the minute (3600 equals secs per minute)
-    																			DEBUG(':');
+	DEBUG((epoch  % 3600) / 60); 
+	DEBUG(':');
     if ((epoch % 60) < 10) {
-      // In the first 10 seconds of each minute, we'll want a leading '0'
-      																			DEBUG('0');
+		DEBUG('0');
     }
-    																			DEBUG(epoch % 60); // print the second
-																				DEBUG("\n");
-	
+	DEBUG(epoch % 60);
+	DEBUG("\n");
 	
 	//prin the reboot time
-																				DEBUG_TIME();DEBUG("Reboot time is ");       // UTC is the time at Greenwich Meridian (GMT)
-    																			DEBUG((RebootTime  % 86400L) / 3600); // print the hour (86400 equals secs per day)
-    																			DEBUG(':');
+	DEBUG_TIME();DEBUG("Reboot time is ");       // UTC is the time at Greenwich Meridian (GMT)
+    DEBUG((RebootTime  % 86400L) / 3600); // print the hour (86400 equals secs per day)
+    DEBUG(':');
     if (((RebootTime % 3600) / 60) < 10) {
       // In the first 10 minutes of each hour, we'll want a leading '0'
-      																			DEBUG('0');
+      DEBUG('0');
     }
-    																			DEBUG((RebootTime  % 3600) / 60); // print the minute (3600 equals secs per minute)
-    																			DEBUG(':');
+    DEBUG((RebootTime  % 3600) / 60); // print the minute (3600 equals secs per minute)
+    DEBUG(':');
     if ((RebootTime % 60) < 10) {
       // In the first 10 seconds of each minute, we'll want a leading '0'
-      																			DEBUG('0');
+      DEBUG('0');
     }
-    																			DEBUG(RebootTime % 60); // print the second
-																				DEBUG("\n");
+    DEBUG(RebootTime % 60); // print the second
+	DEBUG("\n");
 }
 
 // send an NTP request to the time server at the given address

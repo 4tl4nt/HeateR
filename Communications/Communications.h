@@ -12,11 +12,13 @@
 #include <HeateR.h>
 #if USE_WDT
 #include <avr/wdt.h>
+#define FLAG_1 1
+#define FLAG_2 2
+#define FLAG_3 4
+#define FLAG_4 8
+void UpdateWDT (uint8_t i);
 #endif
 
-#if USE_NTP
-extern char timeServer[];
-#endif
 
 extern unsigned int portAPI;
 extern unsigned int portCLI;
@@ -37,6 +39,7 @@ public:
 };
 void UpdateClientEthernet();
 void NewClientEthernet(uint8_t Socket);
+void UpdateWDT (uint8_t i);
 
 #if USE_NTP
 /*
