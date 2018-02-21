@@ -87,6 +87,8 @@ void InitHeateR(){
 	delay(1);
 	if (digitalRead(RESET_BUTTON_PIN)==LOW) HeaterReBoot(ResetMode);
 	RestoryListFromEEPROM();
+	InitRelayModule();
+	InitEthernet();
 }
 
 void HeaterReBoot(restartMode mode)

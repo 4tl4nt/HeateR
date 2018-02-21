@@ -1,0 +1,1 @@
+"C:\Program Files\WinRAR\WinRAR.exe" A -ep HeateR.zip "E:\projects\Heater project\HeateR\HeateR" "E:\projects\Heater project\HeateR\Communications" "E:\projects\Heater project\HeateR\CLI"

@@ -72,12 +72,13 @@ const unsigned int DEFAULT_portCLI = 12346;
 #include <PCF8574.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <Communications.h>
 
 /**-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*SOCKETS*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
 
 #define ADDR_1  PCF8574_BASE_ADD|0
-//#define ADDR_2  PCF8574_BASE_ADD|7
-//#define ADDR_3  PCF8574_BASE_ADD|3
+#define ADDR_2  PCF8574_BASE_ADD|7
+#define ADDR_3  PCF8574_BASE_ADD|3
 #define TEST_MODE 0
 /*
  *

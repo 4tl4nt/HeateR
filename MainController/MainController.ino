@@ -8,10 +8,10 @@
 #include <Communications.h>
 
 ObjCLI *SerialCLI = NULL;
+
 void UpDate (){
-  
 #if USE_WDT
-  UpdateWDT (FLAG_4);
+  UpdateWDT (FLAG_2);
 #endif
   UpdataNextOne();
   clientAPI = serverAPI.available();
@@ -23,9 +23,7 @@ void setup() {
   Serial.begin(115200);
   while (!Serial);
   Serial.println("Inited serial.");
-  InitRelayModule();
   InitHeateR();
-  InitEthernet();
   Serial.println("MainController has started.");
   Serial.println("listen...");
 }
@@ -37,11 +35,9 @@ void loop() {
   if (clientCLI)
   {
     Serial.println("connectCLI");
-    if (SerialCLI==NULL) {
+    if (SerialCLI==NULL)
       SerialCLI= new ObjCLI(&clientCLI);
-      //SerialCLI->InitMenu();
-    }
-    SerialCLI->MainMenu();
+    SerialCLI->MainMenu();// Запуск основного меню, выход из этой функции произойдет если выйти из меню или истечет timeout
     if (clientCLI.connected()) clientCLI.stop();
     Serial.println("listen...");
   }
